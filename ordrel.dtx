@@ -1,0 +1,1487 @@
+% \iffalse meta-comment
+%
+% Copyright (C) 2020 by Alexander Vasilevsky (kalaider) <a.kalaider@yandex.ru>
+% ---------------------------------------------------------------------------
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%   http://www.latex-project.org/lppl.txt
+% and version 1.3 or later is part of all distributions of LaTeX
+% version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+%
+% The Current Maintainer of this work is Alexander Vasilevsky.
+%
+% This work consists of the files ordrel.dtx and ordrel.ins
+% and the derived filebase ordrel.sty.
+%
+% \fi
+%
+% \iffalse
+%<*driver>
+\ProvidesFile{ordrel.dtx}
+
+% \pkg{underscore} is loaded by l3doc unconditionally,
+% we need to provide all the necessary fixes in advance
+\PassOptionsToPackage{strings}{underscore}
+\documentclass{l3doc}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\usepackage[quiet]{ordrel}[2020/09/18]
+
+\setlength{\parindent}{0pt}
+\addtolength{\parskip}{0.5\baselineskip}
+
+\mdfdefinestyle{example}{
+    skipbelow=0cm,
+}
+\newmdenv[style=example]{examplebox}
+
+\EnableCrossrefs
+\RecordChanges
+
+\def\thispkg{\pkg{ordrel}}
+
+\newenvironment{implnote}{\paragraph{Implementation considerations:}}{}
+
+\begin{document}
+  \DocInput{ordrel.dtx}
+  \PrintChanges
+\end{document}
+%</driver>
+
+%<*package>
+\NeedsTeXFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{ordrel}[2020/09/18 1.0 Flexible command for typesetting binary ordering relations]
+\RequirePackage{xparse}     % powerful command syntax
+\RequirePackage{options}    % key-value options for commands
+\RequirePackage{extarrows}  % extensible arrows
+%</package>
+
+% \fi
+%
+% \changes{1.0}{2020/09/18}{The first version}
+%
+% \providecommand*{\url}{\texttt}
+% \title{The \thispkg\ package}
+% \author{Alexander Vasilevsky (kalaider) \\ \url{a.kalaider@yandex.ru}}
+%
+% \maketitle
+
+
+
+% \section{Introduction}
+%
+% The {\thispkg} package provides conveninent commands that
+% together help to typeset various binary ordering relations
+% written in a form $a \circ b$, where $\circ$ is a binary
+% operation. Some examples include ${<}$, ${\le}$ with various
+% subscripts (and even superscripts), labeled ${\to}$, etc.
+%
+% It may become quite tedious to work with lots of relations
+% especially when some of them need to have embellishments.
+% Fairly common situation is $\ordrel[->]{r}_i$ where the
+% value of $i$ is highly context-dependent (and may often
+% be absent). One then needs to either type something like
+% |\myrelation{r$_i$}| each time the different value of $i$
+% is required, or define two versions of |\myR|, one with
+% additional argument representing the index and the other
+% without it, just because there is no (out-of-the-box) way
+% to carry the subscript inside the label, i.e. |\myR_i|
+% is not the right way to get the desired result.
+%
+% But what if it would be possible? The simplest way to
+% handle subscripts is the ``|e_|'' argument specifier provided
+% by \pkg{xparse}. One may then define |\myR| as a universal
+% thin wrapper around |\myrelation| capable of typesetting
+% desired relation in both indexed and unindexed forms transparently:
+%
+% \begin{verbatim}
+% \NewDocumentCommand{\myR}{e_}{%
+%     \myrelation{r\IfValueT{#1}{_{#1}}}}
+% \end{verbatim}
+%
+% {\thispkg} exercises the same idea but in a more generic
+% and convenient way, providing an ability to easily generate
+% new shortcut commands, each of which takes the same range
+% of various customization options.
+%
+% With the help of {\thispkg} the above example may be
+% simplified to just the following:
+%
+% \begin{verbatim}
+% \NewOrdRel*{r}{\myR}
+% \end{verbatim}
+%
+% with additional capability to specify formatting options,
+% default values for indexes, etc.
+%
+% There are still lots of not-so-easy-to-solve small and
+% annoying issues such as spacing. One needs to surround the
+% entire command with braces when the relation is meant to be
+% used standalone (i.e. in operator notation) as in the
+% following example:
+%
+% \[ \ordrel*{hb} = (\ordrel*{po} \cup \ordrel*{sw})^+ \]
+%
+% {\thispkg} helps here a lot, providing starred and unstarred
+% versions of relation commands.
+
+
+% \section{Features}\label{sec:features}
+%
+% \begin{itemize}
+%    \item Flexible configuration based on a rich set of options.
+%    \item A number of predefined relation layout classes,
+%          so it is quite simple to replace the relation symbol
+%          by almost anything.
+%    \item A number of predefined relation styles, so in most common
+%          cases there is no need to customize individual options at all.
+%    \item Almost any internal working horse of the command is replaceable
+%          by means of options, that is, configurable on per-command basis.
+%    \item Flexible spacing to simplify use of the relation symbol in
+%          different contexts (as binary operator, in ``point-free''
+%          standalone operator notation, etc.).
+%    \item \cs{NewOrdRel(X)} commands provide a convenient way of
+%          defining new \cs{ordrel}-like command with default option
+%          values, label, subscript and superscript.
+%    \item The \cs{SetupOrdRel} command allows for global configurarion
+%          manipulation.
+%    \item All state changing commands (\cs{NewOrdRel(X)}, \cs{SetupOrdRel})
+%          are scoped, i.e. they have effect only inside their natural scope,
+%          not relying on global definitions at all.
+% \end{itemize}
+
+
+
+% \section{Introductory example}\label{sec:example}
+%
+% What follows is a small text and the corresponding {\LaTeX}
+% code that show a simple yet complete example of provided
+% features. The first line of the example code is not strictly
+% necessary but included for didactic purposes.
+%
+% \begin{examplebox}
+%    \SetupOrdRel{->}
+%    \NewOrdRel*{hb}{\hb}
+%    \NewOrdRel*{po}{\po}
+%
+%    The \textit{happens-before} relation denoted as \hb\ (or
+%    \hb[le] in some formal literature) is a partial order
+%    relation defined as follows:
+%
+%    \[\hb* \ordrel[eq]{def} (\po* \cup \ordrel*{sw})^+,\]
+%
+%    where the \textit{program order} relation \po\ is a union
+%    of all individual program orders $\po_i$ across all
+%    threads of a particular \textit{execution}, and \ordrel{sw}
+%    is a \textit{synchronizes-with} relation. We say ``$a$
+%    \textit{happens-before} $b$'' and write $a \hb b$ if and
+%    only if either of the following holds:
+%
+%    \begin{enumerate}
+%        \item $a \po b$, or
+%        \item $a \ordrel{sw} b$, or
+%        \item there is some $x$, such that $a \hb x \hb b$.
+%    \end{enumerate}
+%
+%    In some literature one may find variants of \hb, such as
+%    \hb[label=ihb], \hb[label=ghb], etc. but they appear in
+%    specialized contexts and are out of scope of our generic
+%    discussion.
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \SetupOrdRel{->}
+% \NewOrdRel*{hb}{\hb}
+% \NewOrdRel*{po}{\po}
+%
+% The \textit{happens-before} relation denoted as \hb\ (or
+% \hb[le] in some formal literature) is a partial order
+% relation defined as follows:
+%
+% \[\hb* \ordrel[eq]{def} (\po* \cup \ordrel*{sw})^+,\]
+%
+% where the \textit{program order} relation \po\ is a union
+% of all individual program orders $\po_i$ across all
+% threads of a particular \textit{execution}, and \ordrel{sw}
+% is a \textit{synchronizes-with} relation. We say ``$a$
+% \textit{happens-before} $b$'' and write $a \hb b$ if and
+% only if either of the following holds:
+%
+% \begin{enumerate}
+%     \item $a \po b$, or
+%     \item $a \ordrel{sw} b$, or
+%     \item there is some $x$, such that $a \hb x \hb b$.
+% \end{enumerate}
+%
+% In some literature one may find variants of \hb, such as
+% \hb[label=ihb], \hb[label=ghb], etc. but they appear in
+% specialized contexts and are out of scope of our generic
+% discussion.
+% \end{verbatim}
+% \end{examplebox}
+
+
+
+% \section{Usage}\label{sec:usage}
+%
+% \DescribeMacro{\ordrel}
+% The main command provided by {\thispkg}. It takes options in
+% a first argument, mandatory label argument and optional
+% subscript and superscript for the label. Normally the command
+% has \cs{mathrel}-like spacing but it may be changed to no
+% spacing by means of options or by using starred version of
+% the command.
+%
+% \begin{syntax}
+%    \cs{ordrel}*\oarg{opts}\Arg{label}\meta{\_}\meta{subscript}\meta{\^}\meta{superscript}
+%    \cs{ordrel}\oarg{opts}\Arg{label}\meta{\_}\meta{subscript}\meta{\^}\meta{superscript}
+% \end{syntax}
+%
+% Starred version differs from normal version in that is sets up
+% |spacing=no| option implicitly as the last option, so it always
+% takes precedence. The main use case for such specialization is
+% operator notation (such as in $\ordrel*[<]{r}_1 \cup \ordrel*[<]{r}_2$
+% where relations $r_1$ and $r_2$ are used as arguments of another
+% binary operator $\cup$).
+%
+% Note that subscript and superscript are applied \textbf{to label},
+% not to the entire relation operator. If both subscript and superscript
+% need to be specified, they must be given in the order described above.
+%
+% Commands defined by \cs{NewOrdRel(X)} have the same syntax and
+% semantics except for starred versions of \cs{NewOrdRel(X)}
+% which define \cs{ordrel}-like commands without the label argument.
+%
+%
+% \DescribeMacro{\NewOrdRel}
+% \DescribeMacro{\NewOrdRelX}
+% Allows to define custom \cs{ordrel}-like command with a given set
+% of default options and (optionally) explicitly provided label.
+%
+% \begin{syntax}
+%    \cs{NewOrdRel}*\oarg{opts}\Arg{label}\Arg{command}
+%    \cs{NewOrdRel}\oarg{opts}\Arg{command}
+%    \cs{NewOrdRelX}*\oarg{opts}\Arg{label}\Arg{command}\meta{\_}\meta{subscript}\meta{\^}\meta{superscript}
+%    \cs{NewOrdRelX}\oarg{opts}\Arg{command}\meta{\_}\meta{subscript}\meta{\^}\meta{superscript}
+% \end{syntax}
+%
+% \cs{NewOrdRelX} is a convenient way of specifying default values for subscript
+% and superscript of the command to be defined. It is roughly equivalent to
+%
+% \begin{verbatim}
+% \NewOrdRel[subscript=<subscriptX>, superscript=<superscriptX>]...
+% \end{verbatim}
+%
+% where option is provided only when the corresponding embellishment is
+% specified for the \cs{NewOrdRelX} command.
+%
+% All starred versions of \cs{NewOrdRel(X)} commands effectively provide
+% label value as an option to the command to be defined, so one may
+% later change the label even if the newly defined command does not
+% take it explicitly (see example below).
+%
+% \cs{NewOrdRel(X)} commands work on the logical scope level. Their behavior
+% is similar to behavior of \cs{newcommand} in that trying to redefine
+% already defined command will certainly fail.
+%
+% Here is an example of both starred and normal \cs{NewOrdRelX} usage:
+%
+% \begin{examplebox}
+%     \NewOrdRelX[->]{\myarrowj}_j
+%     \NewOrdRelX*[eq]{def}{\mystarreddef}^*
+%
+%     \myarrowj[it]{happens-before}
+%     \myarrowj[it]{happens-before}_k
+%     \mystarreddef[bf]
+%     \mystarreddef[bf]^+
+%     \mystarreddef[label=$\triangle$]^+
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \NewOrdRelX[->]{\myarrowj}_j
+% \NewOrdRelX*[eq]{def}{\mystarreddef}^*
+%
+% \myarrowj[it]{happens-before}
+% \myarrowj[it]{happens-before}_k
+% \mystarreddef[bf]
+% \mystarreddef[bf]^+
+% \mystarreddef[label=$\triangle$]^+
+% \end{verbatim}
+% \end{examplebox}
+%
+%
+% \DescribeMacro{\SetupOrdRel}
+% Allows to change options globally. All commands in the current
+% scope that don't override the specified options will use their
+% new values.
+%
+% \begin{syntax}
+%    \cs{SetupOrdRel}\Arg{opts}
+%    \cs{SetupOrdRel}*\Arg{opts}
+% \end{syntax}
+%
+% The normal command \textbf{always appends} provided option list
+% to the state and never explicitly removes them, so calling it
+% multiple times from the same scope may result in unnecessary
+% overhead. To reduce the overhead, one may use starred version
+% which \textbf{overwrites} the configuration instead of
+% modifying it.
+%
+% One of the possible scenarios when this command may be helpful
+% is global setup. One may configure {\thispkg} appropriately
+% to the style of the document and provide further configuration
+% as needed on a per-command basis.
+%
+% Here is how one may use \cs{SetupOrdRel}.
+%
+% \begin{examplebox}
+%     \SetupOrdRel*{le,it,decorator=\text{\textcolor{red}{\ARG}}}
+%     Red italic label: $a \ordrel{hb} b$ \\
+%     {
+%         \SetupOrdRel{->,bf}
+%         Red boldface label, arrow symbol: $a \ordrel{sw} b$ \\
+%     }
+%     Red italic label: $a \ordrel{hb} b$
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \SetupOrdRel*{le,it,decorator=\text{\textcolor{red}{\ARG}}}
+% Red italic label: $a \ordrel{hb} b$ \\
+% {
+%     \SetupOrdRel{->,bf}
+%     Red boldface label, arrow symbol: $a \ordrel{sw} b$ \\
+% }
+% Red italic label: $a \ordrel{hb} b$
+% \end{verbatim}
+% \end{examplebox}
+
+
+% \section{Options}\label{sec:options}
+%
+% All \cs{ordrel}-like commands take the same options.
+%
+% \DescribeMacro{layoutclass=\meta{xcmd, cmd, subscript, superscript}}
+% \DescribeMacro{relationsymbol=\meta{cmd1, hbox}}
+% The |layoutclass| option determines relation symbol layout and
+% places requirements on what can be assigned to the |relationsymbol|
+% option:
+%
+% \begin{itemize}
+%     \item With |xcmd| the |relationsymbol| command is considered
+%           \textit{eXtensible}, i.e. width of the relation symbol
+%           is expected to changes appropriately to accommodate
+%           the entire label. Label padding \textbf{is} applied.
+%           |relationsymbol| should take exactly one argument~---
+%           fully formatted label. Examples: \cs{xrightarrow}.
+%     \item With |cmd| the |relationsymbol| command is considered
+%           fixed-width. Adding a padding to the label changes
+%           nothing in such case, so it is \textbf{not} applied.
+%           |relationsymbol| should take exactly one argument~---
+%           fully formatted label. Examples: |\overset{#1}{symb}|,
+%           where |symb| is \cs{to}, \cs{circ}, built-in $=$, etc.
+%     \item With |subscript| and |superscript| the |relationsymbol|
+%           command is considered constant, i.e. it should not take
+%           any arguments. The |layoutcmd| manually places the label
+%           either in subscript or superscript position depending
+%           on the value of |layoutclass|. Label padding is
+%           \textbf{not} applied. Use the |decorator| option if
+%           you need to visually adjust the symbol and you don't
+%           want to provide your own formatting command to
+%           |relationsymbol| setting |layoutclass| to |cmd|. Examples:
+%           built-in $<$, $>$, $=$, \cs{circ}, A, etc.
+% \end{itemize}
+%
+% |relationsymbol| is expanded inside math mode.
+%
+% The following example demonstrates the use of |layoutclass|
+% and |relationsymbol| together.
+%
+% \begin{examplebox}
+%     \def\myextarrow#1{\xrightarrow[#1]{}}
+%     \def\mynonextdef#1{\stackrel{#1}{\equiv}}
+%     \def\myrelsymbol{\sqsupseteq}
+%
+%     \SetupOrdRel*{
+%         layoutclass = xcmd,
+%         relationsymbol = \myextarrow,
+%     }
+%     \ordrel{under}
+%     \SetupOrdRel*{
+%         layoutclass = cmd,
+%         relationsymbol = \mynonextdef,
+%     }
+%     \ordrel{$\triangle$}
+%     \SetupOrdRel*{
+%         layoutclass = subscript,
+%         relationsymbol = \myrelsymbol,
+%     }
+%     \ordrel{square}
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \def\myextarrow#1{\xrightarrow[#1]{}}
+% \def\mynonextdef#1{\stackrel{#1}{\equiv}}
+% \def\myrelsymbol{\sqsupseteq}
+%
+% \SetupOrdRel*{
+%     layoutclass = xcmd,
+%     relationsymbol = \myextarrow,
+% }
+% \ordrel{under}
+% \SetupOrdRel*{
+%     layoutclass = cmd,
+%     relationsymbol = \mynonextdef,
+% }
+% \ordrel{$\triangle$}
+% \SetupOrdRel*{
+%     layoutclass = subscript,
+%     relationsymbol = \myrelsymbol,
+% }
+% \ordrel{square}
+% \end{verbatim}
+% \end{examplebox}
+%
+% \DescribeMacro{spacing=\meta{no, rel}}
+% Determines whether the entire relation command should
+% behave as a relation operator in math formulas. If
+% set to |rel|, the enire command is wrapped into \cs{mathrel}.
+%
+% Note that if starred version of \cs{ordrel}-like command
+% is used, this option is implicitly set to |no|. It is
+% by far the most convenient way of saying |spacing=no|
+% for a particular command.
+%
+% The following example provides comparison of different
+% spacing modes in two orthogonal contexts.
+%
+% \begin{examplebox}
+%     Relation as binary operation, |spacing=rel|: $a\ordrel{hb}b$              \\
+%     Relation as binary operation, |spacing=no|: $a\ordrel*{hb}b$              \\
+%     Relation as operator, |spacing=rel|: $\ordrel{po}\subseteq\ordrel{hb}$    \\
+%     Relation as operator, |spacing=no|: $\ordrel*{po}\subseteq\ordrel*{hb}$   \\
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% Relation as binary operation, |spacing=rel|: $a\ordrel{hb}b$              \\
+% Relation as binary operation, |spacing=no|: $a\ordrel*{hb}b$              \\
+% Relation as operator, |spacing=rel|: $\ordrel{po}\subseteq\ordrel{hb}$    \\
+% Relation as operator, |spacing=no|: $\ordrel*{po}\subseteq\ordrel*{hb}$   \\
+% \end{verbatim}
+% \end{examplebox}
+%
+% \DescribeMacro{labelpadding=\meta{length}}
+% Determines the amount of horizontal padding that should be
+% added to fully formatted label before passing it to
+% |relationsymbol| in case of |layoutclass=xcmd|. Otherwise
+% is ignored.
+%
+% It may be convenient to add some padding to extensible arrow labels.
+% {\thispkg} by default defines this option non-zero. The following
+% example demonstrates the effect of setting the option to other value.
+%
+% \begin{examplebox}
+%     \def\mydef#1{\stackrel{#1}{\equiv}}
+%     Default padding: $a\ordrel{hb}b$                              \\
+%     No padding: $a\ordrel[labelpadding=0pt]{hb}b$                 \\
+%     Negative padding: $a\ordrel[labelpadding=-0.28em]{hb}b$       \\
+%     Irrelevant: $a\ordrel[le,labelpadding=3em]{hb}b$              \\
+%     Irrelevant: $a\ordrel[nxsymbol=\mydef,labelpadding=3em]{hb}b$ \\
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \def\mydef#1{\stackrel{#1}{\equiv}}
+% Default padding: $a\ordrel{hb}b$                              \\
+% No padding: $a\ordrel[labelpadding=0pt]{hb}b$                 \\
+% Negative padding: $a\ordrel[labelpadding=-0.28em]{hb}b$       \\
+% Irrelevant: $a\ordrel[le,labelpadding=3em]{hb}b$              \\
+% Irrelevant: $a\ordrel[nxsymbol=\mydef,labelpadding=3em]{hb}b$ \\
+% \end{verbatim}
+% \end{examplebox}
+%
+% \DescribeMacro{decorator=\meta{argcmd}}
+% \DescribeMacro{labeldec=\meta{argcmd}}
+% \DescribeMacro{subdec=\meta{argcmd}}
+% \DescribeMacro{supdec=\meta{argcmd}}
+% Decorator to be applied to the specified part of the label.
+%
+% \textit{Decorator} is a command which takes its argument
+% as an \cs{ARG} macro. It is a convenient way of putting
+% complex decorations on \cs{ARG} without the need to even
+% define any command.
+%
+% All decorators are expanded inside math mode.
+%
+% |decorator| affects the entire label, i.e. its \cs{ARG}
+% is a fully formatted (but not yet decorated) label.
+% Its default value is no-op, i.e. just |\ARG|.
+%
+% All other decorators decorate their specific parts of
+% a fully formatted label, specifically, the label itself,
+% subscript and superscript. All of them are no-op by default,
+% except for |labeldec| which is |\textnormal{\ARG}|.
+%
+% The following example demonstrates the effect of providing
+% all four possible decorators.
+%
+% \begin{examplebox}
+%     \SetupOrdRel{
+%         decorator = \displaystyle\colorbox{black!30}{\ARG},
+%         labeldec  = \displaystyle\textnormal{\textcolor{red!80!black}{\ARG}},
+%         subdec    = \displaystyle\textcolor{green!40!black}{\mathbf{\ARG}},
+%         supdec    = \displaystyle\textcolor{blue!80!black}{\overline{\ARG}},
+%     }
+%     \Large$\ordrel[->]{relation}_{sub}^{sup}$
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \SetupOrdRel{
+%     decorator = \displaystyle\colorbox{black!30}{\ARG},
+%     labeldec  = \displaystyle\textnormal{\textcolor{red!80!black}{\ARG}},
+%     subdec    = \displaystyle\textcolor{green!40!black}{\mathbf{\ARG}},
+%     supdec    = \displaystyle\textcolor{blue!80!black}{\overline{\ARG}},
+% }
+% \Large$\ordrel[->]{relation}_{sub}^{sup}$
+% \end{verbatim}
+% \end{examplebox}
+%
+% \DescribeMacro{label=\meta{hbox}}
+% \DescribeMacro{subscript=\meta{hbox}}
+% \DescribeMacro{superscript=\meta{hbox}}
+% Default values for different parts of the fully formatted label.
+%
+% |label| makes sense only for commands defined by starred
+% versions of \cs{NewOrdRel(X)} that don't take label explicitly.
+%
+% The example follows.
+%
+% \begin{examplebox}
+%     \SetupOrdRel{
+%         subscript = i,
+%         superscript = +,
+%     }
+%     \Large
+%     $\ordrel{relation}$
+%     $\ordrel{relation}_k$
+%     $\ordrel{relation}^*$
+%     $\ordrel{relation}_k^*$
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \SetupOrdRel{
+%     subscript = i,
+%     superscript = +,
+% }
+% \Large
+% $\ordrel{relation}$
+% $\ordrel{relation}_k$
+% $\ordrel{relation}^*$
+% $\ordrel{relation}_k^*$
+% \end{verbatim}
+% \end{examplebox}
+%
+% \DescribeMacro{xsymbol=\meta{cmd1}}
+% \DescribeMacro{nxsymbol=\meta{cmd1}}
+% \DescribeMacro{symbol=\meta{hbox}}
+% Convenient wrappers around |relationsymbol| that set
+% |layoutclass| appropriately (|layoutclass=xcmd|,
+% |cmd| and |subscript| correspondingly).
+%
+% \DescribeMacro{->, <-, <->}
+% Convenient styles setting |xsymbol| to the appripriate
+% extensible arrow command.
+%
+% \DescribeMacro{eq}
+% Convenient style setting |xsymbol| to \cs{xlongequal}.
+%
+% \DescribeMacro{>, <, le, ge}
+% Convenient styles setting |symbol| to the appripriate
+% relation symbol.
+%
+% \DescribeMacro{raw}
+% Same as |spacing=no|.
+%
+% \DescribeMacro{text, it, bf}
+% Convenient styles setting |labeldec| to the appropriate
+% text-mode style.
+%
+% \DescribeMacro{math}
+% Resets |labeldec| to no-op, effectively leaving the label
+% inside math mode.
+
+
+% \section{Advanced options}\label{sec:avdanced-options}
+%
+% \DescribeMacro{layoutcmd=\meta{cmd1}}
+% \DescribeMacro{spacingcmd=\meta{cmd1}}
+% \DescribeMacro{labelpaddingcmd=\meta{cmd1}}
+% \DescribeMacro{labelcmd=\meta{cmd1}}
+% Low-level customization options. See the documentation of
+% their default values for more details on how to implement
+% them and for the reasons one may need it at all.
+%
+% All these commands by default run inside math mode. The user
+% should preserve this convention.
+%
+% \begin{examplebox}
+%     \def\unpad#1{\!\!#1\!\!}
+%
+%     \SetupOrdRel*{eq}
+%     \ordrel[labelpadding=-0.28em]{$\triangle$}
+%     \ordrel[labelpaddingcmd=\unpad]{$\triangle$}
+%
+%     \def\labelcmd#1#2#3{{}\IfValueT{#2}{_{#2}}\IfValueT{#3}{^{#3}}#1}
+%
+%     \makeatletter
+%         \SetupOrdRel*{labelcmd=\@ordrel@labelcmd@trampoline{\labelcmd}}
+%     \makeatother
+%     \ordrel{label}_{sub}^{sup}
+%
+%     \def\layoutcmd#1{\fbox{#1}}
+%
+%     \SetupOrdRel*{<}
+%     \ordrel[layoutcmd=\layoutcmd]{label}_{sub}^{sup}
+%     \ordrel[nxsymbol=\fbox]{label}_{sub}^{sup}
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \def\unpad#1{\!\!#1\!\!}
+%
+% \SetupOrdRel*{eq}
+% \ordrel{$\triangle$}
+% \ordrel[labelpadding=-0.28em]{$\triangle$}
+% \ordrel[labelpaddingcmd=\unpad]{$\triangle$}
+%
+% \def\labelcmd#1#2#3{{}\IfValueT{#2}{_{#2}}\IfValueT{#3}{^{#3}}#1}
+%
+% \makeatletter
+%     \SetupOrdRel*{labelcmd=\@ordrel@labelcmd@trampoline{\labelcmd}}
+% \makeatother
+% \ordrel{label}_{sub}^{sup}
+%
+% \def\layoutcmd#1{\fbox{#1}}
+%
+% \SetupOrdRel*{<}
+% \ordrel[layoutcmd=\layoutcmd]{label}_{sub}^{sup}
+% \ordrel[nxsymbol=\fbox]{label}_{sub}^{sup}
+% \end{verbatim}
+% \end{examplebox}
+%
+% In the above example only one case (currently) cannot be achieved
+% by using high-level options.
+
+
+% \section{User-provided styles and options}\label{sec:custom-options}
+%
+% As {\thispkg} internally uses the \pkg{options} package to
+% handle options, there are planty ways to extend a set of
+% available options to provide some additional functionality.
+% The easiest and by far the most common case is a custom
+% style definition. The more interesting case is definition
+% of a completely unrelated option consumed by relation symbol
+% command or decorator. What follows is a list of examples
+% of the actual implementation of the above two cases.
+%
+% \begin{examplebox}
+%     \options{
+%         /ordrel/dbl->/.new style* = { /ordrel/xsymbol = \xLongrightarrow },
+%         /mystyles/.new family,
+%         /mystyles/<-dbl/.new style* = { /ordrel/xsymbol = \xLongleftarrow },
+%     }
+%     \SetupOrdRel{
+%         >>/.new style* = { symbol = {>>} },
+%         /ordrel/<</.new style* = { /ordrel/symbol = {>>} },
+%         labelcolor/.new color = black,
+%         labeldec = \textnormal{\textcolor{\option{/ordrel/labelcolor}}{\ARG}},
+%     }
+%     Using relative option paths: \ordrel[>>]{relation}, \\
+%     Using absolute option paths: \ordrel[<<]{relation}, \\
+%     Using plain \pkg{options}: \ordrel[dbl->]{relation}, \\
+%     Using custom options family: \ordrel[/mystyles/<-dbl]{relation}, \\
+%     Consuming custom option in decorator: \ordrel[labelcolor=green]{relation}, \\
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \options{
+%     /ordrel/dbl->/.new style* = { /ordrel/xsymbol = \xLongrightarrow },
+%     /mystyles/.new family,
+%     /mystyles/<-dbl/.new style* = { /ordrel/xsymbol = \xLongleftarrow },
+% }
+% \SetupOrdRel{
+%     >>/.new style* = { symbol = {>>} },
+%     /ordrel/<</.new style* = { /ordrel/symbol = {>>} },
+%     labelcolor/.new color = black,
+%     labeldec = \textnormal{\textcolor{\option{/ordrel/labelcolor}}{\ARG}},
+% }
+% Using relative option paths: \ordrel[>>]{relation}, \\
+% Using absolute option paths: \ordrel[<<]{relation}, \\
+% Using plain \pkg{options}: \ordrel[dbl->]{relation}, \\
+% Using custom options family: \ordrel[/mystyles/<-dbl]{relation}, \\
+% Consuming custom option in decorator: \ordrel[labelcolor=green]{relation}, \\
+% \end{verbatim}
+% \end{examplebox}
+
+% \section{Limitations}\label{sec:limitations}
+%
+% The package requires the catcodes of ``\_'' and ``\^{}'' to be
+% consistent inside and outside of the document body for its
+% full and consistent operation. See \cref{sec:troubleshooting}
+% for details and possible fixes.
+
+
+
+% \section{Troubleshooting}\label{sec:troubleshooting}
+%
+% \subsection{\pkg{underscore}}
+%
+% One of the notable features \thispkg\ provides is transparent
+% handling of subscript and superscript embellishments. One
+% need not to tediously type something like the following:
+% \begin{verbatim}
+% \def\hbi{\ordrel{hb$_i$}}
+% \def\hbj{\ordrel{hb$_j$}}
+% \def\hbk{\ordrel{hb$_k$}}
+% ... where \hbi is ..., \hbj is ... and \hbk is ...
+% \end{verbatim}
+% while one's intension is completely clear and fairly common:
+% \begin{verbatim}
+% \def\hb{\ordrel{hb}}
+% ... where \hb_i is ..., \hb_j is ... and \hb_k is ...
+% \end{verbatim}
+%
+% This feature, however, doesn't come without a cost. {\thispkg}
+% relies on \pkg{xparse} internally, which, in turn, expects
+% the catcode of ``\_'' (and ``\^{}'') not to change suddenly.
+% The \pkg{underscore} package changes catcode of ``\_'' at the
+% begin of the document, so that commands defined outside of
+% the document body might not work correcly inside it.
+%
+% The workaround here is to pass the |strings| option to \pkg{underscore}.
+% It, however, may be destructive to unconditionally set this option.
+% Moreover, there is no sense in passing options to already loaded package.
+% So {\thispkg} is configured to only emit a warning if it detects
+% \pkg{underscore}. The user should either pass |strings| to \pkg{underscore}
+% manually (and optionally turn off the warning by passing |quiet| to
+% {\thispkg}) or (if \pkg{underscore} is loaded after {\thispkg})
+% pass |underscore| to {\thispkg} to let {\thispkg} configure
+% \pkg{underscore} automatically.
+
+
+% \StopEventually{}
+%
+% \section{Implementation}
+%
+% \iffalse
+%<*package>
+% \fi
+
+% \subsection{Package Options}
+%
+% The package comes without global options affecting provided
+% commands (except for the following to ensure better
+% interoperability with interfering packages). All provided
+% features are configurable in-place on per-command or per-scope basis.
+%
+% Don't emit warning if \pkg{underscore} is loaded before
+% {\thispkg}, or if \pkg{underscore} is loaded after {\thispkg}
+% and the |underscore| option is not provided, or if some other
+% package changes catcodes of ``\_'' and/or ``\^{}'' inside
+% the document body
+%    \begin{macrocode}
+\newif\if@ordrel@opt@quiet
+\DeclareOption{quiet}{\@ordrel@opt@quiettrue}
+%    \end{macrocode}
+% Whether to pass the |strings| option to \pkg{underscore}
+% during {\thispkg} initialization
+%    \begin{macrocode}
+\newif\if@ordrel@opt@underscore@strings
+\DeclareOption{underscore}{\@ordrel@opt@underscore@stringstrue}
+%    \end{macrocode}
+% Handle unknown options
+%    \begin{macrocode}
+\DeclareOption*{%
+    \PackageWarning{ordrel}{`\CurrentOption' ignored}}
+%    \end{macrocode}
+% Some reasonable defaults
+%    \begin{macrocode}
+\ExecuteOptions{}
+%    \end{macrocode}
+% Done with package options
+%    \begin{macrocode}
+\ProcessOptions\relax
+%    \end{macrocode}
+
+% \subsection{Interaction with other packages}
+%
+% Emit warning if \pkg{underscore} is loaded before {\thispkg},
+% otherwise configure \pkg{underscore} appropriately. Warn if someone
+% else plays with catcodes in a way that it may interfere with us.
+%    \begin{macrocode}
+\newif\if@ordrel@catcode@warned
+\if@ordrel@opt@quiet\else
+
+    \@ifpackageloaded{underscore}%
+    {%
+        \@ordrel@catcode@warnedtrue%
+        \PackageWarning{ordrel}{%
+            The `underscore' package was loaded before `ordrel'. %
+            It may cause some commands to handle subscript embellishments %
+            improperly. Please, load `underscore' after `ordrel' %
+            and use `underscore' option to overcome this, or add the %
+            `quiet' option and pass `strings' to `underscore' manually.%
+        }
+    }{}
+
+    \if@ordrel@opt@underscore@strings\relax
+        \PassOptionsToPackage{strings}{underscore}
+    \fi
+
+    \if@ordrel@catcode@warned\else
+        \AtBeginDocument{%
+            \@ifpackageloaded{underscore}%
+            {%
+                \if@ordrel@opt@underscore@strings\else
+                    \PackageWarning{ordrel}{%
+                        The `underscore' package was loaded after `ordrel' while %
+                        `ordrel' was not instructed to properly configure the former. %
+                        It may cause some commands to handle subscript embellishments %
+                        improperly. Please, provide `underscore' option to configure %
+                        the `underscore' package automatically, or `quiet' to %
+                        suppress this warning if you prefer to manually pass `strings' %
+                        to the `underscore' package or just don't care.%
+                    }
+                \fi
+            }{%
+                \begingroup
+                \def\emitwarning{%
+                    \PackageWarning{ordrel}{%
+                        Catcodes of `_' and/or `^' characters are non-standard. %
+                        It may cause some `ordrel` commands to handle subscript %
+                        embellishments improperly. If non-standard catcodes are %
+                        expected and the package works fine, suppress this warning %
+                        with the help of the `quiet' option.%
+                    }
+                }
+                \ifnum\the\catcode`\^=7\relax\else
+                    \@ordrel@catcode@warnedtrue
+                    \emitwarning
+                \fi
+                \ifnum\the\catcode`\_=8\relax\else
+                    \if@ordrel@catcode@warned\else
+                        \emitwarning
+                    \fi
+                \fi
+                \endgroup
+            }
+        }
+    \fi
+\fi
+%    \end{macrocode}
+
+% \subsection{Command Options}
+%
+%    \begin{macrocode}
+\options{
+    % options
+    /ordrel/.new family,
+    /ordrel/layoutcmd/.new value        = \@ordrel@layoutcmd,
+    /ordrel/layoutclass/.new choice     = { xcmd, cmd, subscript, superscript },
+    /ordrel/relationsymbol/.new value,
+    /ordrel/spacingcmd/.new value       = \@ordrel@spacingcmd,
+    /ordrel/spacing/.new choice         = { no, rel },
+    /ordrel/spacing                     = rel,
+    /ordrel/labelpaddingcmd/.new value  = \@ordrel@labelpaddingcmd,
+    /ordrel/labelpadding/.new value     = 0.2em,
+    /ordrel/labelcmd/.new value         = \@ordrel@labelcmd@trampoline{\@ordrel@labelcmd},
+    /ordrel/decorator/.new value        = \ARG,
+    /ordrel/labeldec/.new value         = \textnormal{\ARG},
+    /ordrel/subdec/.new value           = \ARG,
+    /ordrel/supdec/.new value           = \ARG,
+    % label and script defaults
+    /ordrel/label/.new value            =,
+    /ordrel/subscript/.new value        =,
+    /ordrel/superscript/.new value      =,
+    % styles
+    /ordrel/xsymbol/.new style = {
+        /ordrel/layoutclass = xcmd,
+        /ordrel/relationsymbol = #1,
+    },
+    /ordrel/nxsymbol/.new style = {
+        /ordrel/layoutclass = cmd,
+        /ordrel/relationsymbol = #1,
+    },
+    /ordrel/symbol/.new style = {
+        /ordrel/layoutclass = subscript,
+        /ordrel/relationsymbol = #1,
+    },
+    /ordrel/->/.new style* = {
+        /ordrel/xsymbol = \xrightarrow,
+    },
+    /ordrel/<-/.new style* = {
+        /ordrel/xsymbol = \xleftarrow,
+    },
+    /ordrel/<->/.new style* = {
+        /ordrel/xsymbol = \xleftrightarrow,
+    },
+    /ordrel/eq/.new style* = {
+        /ordrel/xsymbol = \xlongequal,
+        /ordrel/labelpadding = -0.28em,
+    },
+    /ordrel/>/.new style* = {
+        /ordrel/symbol = >,
+    },
+    /ordrel/</.new style* = {
+        /ordrel/symbol = <,
+    },
+    /ordrel/le/.new style* = {
+        /ordrel/symbol = \le,
+    },
+    /ordrel/ge/.new style* = {
+        /ordrel/symbol = \ge,
+    },
+    /ordrel/raw/.new style* = {
+        /ordrel/spacing = no,
+    },
+    /ordrel/math/.new style* = {
+        /ordrel/labeldec = \ARG,
+    },
+    /ordrel/text/.new style* = {
+        /ordrel/labeldec = \textnormal{\ARG},
+    },
+    /ordrel/it/.new style* = {
+        /ordrel/labeldec = \textnormal{\textit{\ARG}},
+    },
+    /ordrel/bf/.new style* = {
+        /ordrel/labeldec = \textnormal{\textbf{\ARG}},
+    },
+    /ordrel/->,
+}
+
+% global options setup
+\def\@ordrel@options@global{}
+%    \end{macrocode}
+
+% \subsection{Internal formatters}
+
+% \begin{macro}{\@ordrel@labelpaddingcmd}
+%    Given a fully formatted label box, returns its padded variant.
+%
+%    \begin{arguments}
+%        \item fully formatted label box with all subscripts
+%              and superscripts already applied
+%    \end{arguments}
+%
+%    \begin{implnote}
+%       The command should but not required to take the |/ordrel/labelpadding|
+%       option into account. It may provide its own padding strategy if necessary.
+%    \end{implnote}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@labelpaddingcmd}{m}{%
+    \letoption{/ordrel/labelpadding}\@ordrel@labelpadding\relax%
+    \hspace*{\@ordrel@labelpadding}%
+    #1%
+    \hspace*{\@ordrel@labelpadding}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@layoutcmd}
+%    Given a fully formatted label box, returns the full relation
+%    consisting of the relation symbol itself and the label,
+%    padded if necessary.
+%
+%    \begin{arguments}
+%        \item fully formatted label box with all subscripts
+%              and superscripts already applied
+%    \end{arguments}
+%
+%    \begin{implnote}
+%       The command should but not required to take |/ordrel/layoutclass|,
+%       |/ordrel/relationsymbol| and |/ordrel/labelpaddingcmd| options
+%       into account. It may provide its own symbol and may even completely
+%       ignore the argument (label) or format its own one from some custom options.
+%    \end{implnote}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@layoutcmd}{m}{%
+    \letoption{/ordrel/layoutclass/@ord}\@ordrel@layoutclass\relax%
+    \letoption{/ordrel/relationsymbol}\@ordrel@relationsymbol\relax%
+    \@ordrel@util@switch@four{\@ordrel@layoutclass}%
+        {\@ordrel@relationsymbol{\option{/ordrel/labelpaddingcmd}{#1}}}% xcmd
+        {\@ordrel@relationsymbol{#1}}% cmd
+        {{\@ordrel@relationsymbol}_{#1}}% subscript
+        {{\@ordrel@relationsymbol}^{#1}}% superscript
+        {\PackgeError{ordrel}{Unknown arrow type option: `\option{/ordrel/layoutclass}'}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@spacingcmd}
+%    Given a fully formatted relation box, applies the specified
+%    (implicitly by means of options) overall spacing policy.
+%
+%    \begin{arguments}
+%        \item fully formatted relation box
+%    \end{arguments}
+%
+%    \begin{implnote}
+%       The command should but not required to take the |/ordrel/spacing|
+%       option into account. Currently only binary relation spacing and
+%       no spacing alternatives are provided but in some exotic cases
+%       it may be desireable to achieve e.g. operator-like spacing.
+%    \end{implnote}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@spacingcmd}{m}{%
+    \letoption{/ordrel/spacing/@ord}\@ordrel@spacing\relax%
+    \@ordrel@util@switch@two{\@ordrel@spacing}%
+        {{#1}}% no
+        {\mathrel{{#1}}}% rel
+        {\PackgeError{ordrel}{Unknown arrow type option: `\option{/ordrel/spacing}'}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@labelcmd@trampoline}
+%    The helper function that invokes the simplier |labelcmd| with
+%    some arguments defaulted to their corresponding option values
+%    or \cs{NoValue} if the option is itself void.
+%
+%    \begin{arguments}
+%        \item the command to be invoked
+%        \item raw main label (may be \cs{NoValue})
+%        \item raw subscript (may be \cs{NoValue})
+%        \item raw superscript (may be \cs{NoValue})
+%    \end{arguments}
+%
+%    \begin{implnote}
+%       The command should but not required to take the |/ordrel/spacing|
+%       option into account. Currently only binary relation spacing and
+%       no spacing alternatives are provided but in some exotic cases
+%       it may be desireable to achieve e.g. operator-like spacing.
+%    \end{implnote}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@labelcmd@trampoline}{m m m m}{%
+    \@ordrel@util@invoke@with@default{#4}{/ordrel/superscript}{%
+        \@ordrel@util@invoke@with@default{#3}{/ordrel/subscript}{%
+            \@ordrel@util@invoke@with@default{#2}{/ordrel/label}{#1}
+        }%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@labelcmd}
+%    Combines label text and two scripts into a single label box.
+%
+%    \begin{arguments}
+%        \item main label (may be \cs{NoValue})
+%        \item subscript (may be \cs{NoValue})
+%        \item superscript (may be \cs{NoValue})
+%    \end{arguments}
+%
+%    \begin{implnote}
+%       The command should but not required to take the following options into account:
+%
+%       \begin{itemize}
+%           \item defaults for each argument:
+%                 |/ordrel/label|, |/ordrel/subscript| and |/ordrel/superscript|,
+%           \item entire label decorators:
+%                 |/ordrel/decorator|.
+%           \item decorators for each part of the label:
+%                 |/ordrel/labeldec|, |/ordrel/subdec| and |/ordrel/supdec|.
+%       \end{itemize}
+%
+%       All decorators should but not required to be expanded inside math mode.
+%
+%       In order to simplify implementation, the package actually installs
+%       a thin wrapper around this macro as a |labelcmd| that prepares options
+%       from the first bullet above as regular arguments. The typical implementation
+%       need not handle arguments and options separately.
+%    \end{implnote}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@labelcmd}{m m m}{%
+    \@ordrel@util@decorator@run{\option{/ordrel/decorator}}{%
+        \IfValueT{#1}{\@ordrel@util@decorator@run{\option{/ordrel/labeldec}}{#1}}%
+        % in case if the outer decorator enters text mode,
+        % we still should be able to use _ and ^
+        \ensuremath{%
+            \IfValueT{#2}{_\@ordrel@util@decorator@run{\option{/ordrel/subdec}}{#2}}%
+            \IfValueT{#3}{^\@ordrel@util@decorator@run{\option{/ordrel/supdec}}{#3}}%
+        }%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \subsection{User-exposed command trampolines}
+
+% \begin{macro}{\@ordrel@impl}
+%    Combines label text and two scripts into a single relation box.
+%
+%    \begin{arguments}
+%        \item main label (may be \cs{NoValue})
+%        \item subscript (may be \cs{NoValue})
+%        \item superscript (may be \cs{NoValue})
+%    \end{arguments}
+%
+%    \begin{implnote}
+%       The command should but not required to invoke the following commands
+%       in order to fully format the result:
+%
+%       \begin{itemize}
+%           \item |/ordrel/labelcmd|,
+%           \item |/ordrel/layoutcmd|, and
+%           \item |/ordrel/spacingcmd|.
+%       \end{itemize}
+%
+%       The default implementation just chains them in that order.
+%    \end{implnote}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@impl}{m m m}{%
+    \def\@ordrel@symbol{%
+        \option{/ordrel/layoutcmd}{\option{/ordrel/labelcmd}{#1}{#2}{#3}}}%
+    \option{/ordrel/spacingcmd}{\@ordrel@symbol}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@new@label}
+% \begin{macro}{\@ordrel@new@nolabel}
+%    Define labeled or unlabeled variant of the new \cs{ordrel}-like command.
+%
+%    \begin{arguments}
+%        \item (for internal needs) must NOT be provided with value
+%        \item default option values for the new command
+%        \item (in case of named) predefined label (cannot be changed)
+%        \item command to define
+%    \end{arguments}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@new@label}{o m m m}{%
+    \NewDocumentCommand{#4}{s O{} e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options{#2,label=#3,##2}{##1}%
+            % take name from the outer command,
+            % embellishments - from the inner
+            \ensuremath{\@ordrel@impl{#1}{##3}{##4}}%
+        \endgroup%
+    }%
+}
+
+\DeclareDocumentCommand{\@ordrel@new@nolabel}{m m}{%
+    \NewDocumentCommand{#2}{s O{} m e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options{#1,##2}{##1}%
+            % take all arguments from the inner
+            \ensuremath{\@ordrel@impl{##3}{##4}{##5}}%
+        \endgroup%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+
+
+% \begin{macro}{\@ordrel@new@label@x}
+% \begin{macro}{\@ordrel@new@nolabel@x}
+%    Define labeled or unlabeled variant of the new \cs{ordrel}-like command.
+%    Both commands are capable of handling embellishments which become
+%    default values for subscript and superscript in the newly defined command.
+%
+%    \begin{arguments}
+%        \item (for internal needs) must NOT be provided with value
+%        \item default option values for the new command
+%        \item (in case of named) predefined label (cannot be changed)
+%        \item command to define
+%        \item default value for subscript
+%        \item default value for superscript
+%    \end{arguments}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@new@label@x}{o m m m e_ e^}{%
+    % #1 must always be -NoValue-
+    \NewDocumentCommand{#4}{s O{} e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options@x{#2,label=#3}{##2}{#5}{#6}{##1}
+            % take name from the outer command,
+            % local embellishments take precedence
+            \ensuremath{\@ordrel@impl{#1}{##3}{##4}}%
+        \endgroup%
+    }%
+}
+
+\DeclareDocumentCommand{\@ordrel@new@nolabel@x}{m m e_ e^}{%
+    \NewDocumentCommand{#2}{s O{} m e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options@x{#1}{##2}{#3}{#4}{##1}%
+            % take name from the inner command,
+            % local embellishments take precedence
+            \ensuremath{\@ordrel@impl{##3}{##4}{##5}}%
+        \endgroup%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+
+% \subsection{Various utility commands}
+
+% \begin{macro}{\@ordrel@util@options}
+%    Sets up options taking spacing issues into account.
+%
+%    \begin{arguments}
+%        \item additional options
+%        \item no spacing flag
+%    \end{arguments}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@options}{m m}{%
+    \options{/ordrel,}%
+    \@ordrel@options@global%
+    \optionsalso{#1,}%
+    \IfBooleanT{#2}{\optionsalso{spacing=no}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@util@options@x}
+%    Sets up options taking care of embellishments
+%    if provided and spacing as well.
+%
+%    \begin{arguments}
+%        \item additional global options
+%        \item additional local options
+%        \item subscript (may be \cs{NoValue})
+%        \item superscript (may be \cs{NoValue})
+%        \item no spacing flag
+%    \end{arguments}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@options@x}{m m m m m}{%
+    % it is simplier to duplicate some code
+    % from the command above than call it
+    \options{/ordrel,}%
+    \@ordrel@options@global%
+    \optionsalso{#1,}%
+    \IfValueT{#3}{\optionsalso{subscript=#3}}%
+    \IfValueT{#4}{\optionsalso{superscript=#4}}%
+    \optionsalso{#2}%
+    \IfBooleanT{#5}{\optionsalso{spacing=no}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@util@switch@two}
+% \begin{macro}{\@ordrel@util@switch@three}
+% \begin{macro}{\@ordrel@util@switch@four}
+%    Index-based switch with the first argument as the key
+%    and the last argument as the default case. Zero-based indexing.
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@switch@two}{m m m m}{%
+    \ifnum#1=0\relax#2\else%
+        \ifnum#1=1\relax#3\else#4\fi%
+    \fi%
+}
+\DeclareDocumentCommand{\@ordrel@util@switch@three}{m m m m m}{%
+    \ifnum#1=0\relax#2\else%
+        \ifnum#1=1\relax#3\else%
+            \ifnum#1=2\relax#4\else#5\fi%
+        \fi%
+    \fi%
+}
+\DeclareDocumentCommand{\@ordrel@util@switch@four}{m m m m m m}{%
+    \ifnum#1=0\relax#2\else%
+        \ifnum#1=1\relax#3\else%
+            \ifnum#1=2\relax#4\else%
+                \ifnum#1=3\relax#5\else#6\fi%
+            \fi%
+        \fi%
+    \fi%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@util@decorator@run}
+%    Sets up \cs{ARG} macro and calls the given handler without arguments inside math mode.
+%    \begin{arguments}
+%        \item No-arg handler expecing \cs{ARG} set
+%        \item Argument to handler
+%    \end{arguments}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@decorator@run}{m m}{%
+    {\ensuremath{\def\ARG{#2}#1}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@util@invoke@with@default}
+%    Passes either the first argument, the specified option value
+%    if the former is \cs{NoValue} or \cs{NoValue} if the option
+%    is void to the provided command.
+%    \begin{arguments}
+%        \item Argument value (may be \cs{NoValue})
+%        \item Fallback option name
+%        \item Command or expression to invoke
+%    \end{arguments}
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@invoke@with@default}{m m m}{%
+    \IfValueTF{#1}{#3{#1}}{%
+        \ifoptionvoid{#2}%
+            {#3{#1}}% #1 is NoValue
+            {#3{\option{#2}}}%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \subsection{User-exposed commands}
+
+% \begin{macro}{\ordrel}
+%    The main command provided to the end user. Takes optional
+%    list of arguments and mandatory relation label followed by
+%    optional subscript and/or superscript embellishments.
+%    \begin{syntax}
+%        \cs{ordrel}\meta{*}\oarg{options}\Arg{label}\meta{\_}\meta{sub}\meta{\^}\meta{sup}
+%    \end{syntax}
+%    \begin{arguments}
+%        \item Optional star
+%        \item List of options
+%        \item The relation label
+%        \item The label subscript embellishment
+%        \item The label superscript embellishment
+%    \end{arguments}
+%    Star effectively adds |spacing=no| option to the option list.
+%    \begin{macrocode}
+\DeclareDocumentCommand{\ordrel}{s O{} m e_ e^}{%
+    \begingroup%
+        \@ordrel@util@options{#2}{#1}%
+        \ensuremath{\@ordrel@impl{#3}{#4}{#5}}%
+    \endgroup%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\NewOrdRel}
+%    Defines new \cs{ordrel}-like command with the given
+%    list of default options. The new command takes the same
+%    arguments as \cs{ordrel} except for case when the starred
+%    version of this command was used to define it with explicitly
+%    provided label.
+%    \begin{syntax}
+%        \cs{NewOrdRel}\oarg{options}\Arg{command}
+%        \cs{NewOrdRel}\meta{*}\oarg{options}\Arg{label}\Arg{command}
+%    \end{syntax}
+%    The commands validates option list before proceeding
+%    with new command definition.
+%    \begin{macrocode}
+\DeclareDocumentCommand{\NewOrdRel}{s O{}}{%
+    % check if options are correct early
+    {\options{/ordrel,#2}}%
+    \IfBooleanTF{#1}%
+        {\@ordrel@new@label{#2}}%
+        {\@ordrel@new@nolabel{#2}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\NewOrdRelX}
+%    Defines new \cs{ordrel}-like command with the given
+%    list of default options. The new command takes the same
+%    arguments as \cs{ordrel} except for case when the starred
+%    version of this command was used to define it with explicitly
+%    provided label.
+%    \begin{syntax}
+%        \cs{NewOrdRel}\oarg{options}\Arg{command}\meta{\_}\meta{sub}\meta{\^}\meta{sup}
+%        \cs{NewOrdRel}\meta{*}\oarg{options}\Arg{label}\Arg{command}\meta{\_}\meta{sub}\meta{\^}\meta{sup}
+%    \end{syntax}
+%    Unlike \cs{NewOrdRel}, this command allows to specify
+%    default values for subscript and superscript for the
+%    newly defined command in somewhat more convenient way.
+%
+%    The commands validates option list before proceeding
+%    with new command definition.
+%    \begin{macrocode}
+\DeclareDocumentCommand{\NewOrdRelX}{s O{}}{%
+    % check if options are correct early
+    {\options{/ordrel,#2}}%
+    \IfBooleanTF{#1}%
+        {\@ordrel@new@label@x{#2}}%
+        {\@ordrel@new@nolabel@x{#2}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\SetupOrdRel}
+%    Allows to configure current scope-level default options.
+%    \begin{syntax}
+%        \cs{SetupOrdRel}\Arg{options}
+%        \cs{SetupOrdRel}*\Arg{options}
+%    \end{syntax}
+%
+%    The command first validates the given options, then
+%    modifies the scope-level variable adding (or assigning
+%    in case of starred version) the passed options to it.
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\SetupOrdRel}{s m}{%
+    % validate options
+    {\options{/ordrel,#2}}%
+    \IfBooleanTF{#1}{%
+        \def\@ordrel@options@global{%
+            \optionsalso{#2,}%
+        }%
+    }{%
+        \expandafter\def\expandafter\@ordrel@options@global\expandafter{%
+            \@ordrel@options@global%
+            \optionsalso{#2,}%
+        }%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+
+%
+% \iffalse
+%</package>
+% \fi
+%
+% \Finale
+\endinput

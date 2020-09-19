@@ -1,0 +1,390 @@
+%%
+%% This is file `ordrel.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% ordrel.dtx  (with options: `package')
+%% 
+%% This file is part of the package ordrel for use with LaTeX2e.
+%% 
+%% Function: Provides a flexible command for typesetting various
+%%           binary relations (a -> b, a < b, etc.).
+%% 
+%% This program may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2005/12/01 or later.
+%% 
+%% Please send error reports and suggestions for improvements to
+%%     Alexander Vasilevsky <kalaider@yandex.ru>
+%% 
+%% Alternatively, use github:
+%%     https://github.com/kalaider/ordrel
+%% 
+
+\NeedsTeXFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{ordrel}[2020/09/18 1.0 Flexible command for typesetting binary ordering relations]
+\RequirePackage{xparse}     % powerful command syntax
+\RequirePackage{options}    % key-value options for commands
+\RequirePackage{extarrows}  % extensible arrows
+
+
+
+
+
+
+
+
+
+
+
+
+\newif\if@ordrel@opt@quiet
+\DeclareOption{quiet}{\@ordrel@opt@quiettrue}
+\newif\if@ordrel@opt@underscore@strings
+\DeclareOption{underscore}{\@ordrel@opt@underscore@stringstrue}
+\DeclareOption*{%
+    \PackageWarning{ordrel}{`\CurrentOption' ignored}}
+\ExecuteOptions{}
+\ProcessOptions\relax
+
+\newif\if@ordrel@catcode@warned
+\if@ordrel@opt@quiet\else
+
+    \@ifpackageloaded{underscore}%
+    {%
+        \@ordrel@catcode@warnedtrue%
+        \PackageWarning{ordrel}{%
+            The `underscore' package was loaded before `ordrel'. %
+            It may cause some commands to handle subscript embellishments %
+            improperly. Please, load `underscore' after `ordrel' %
+            and use `underscore' option to overcome this, or add the %
+            `quiet' option and pass `strings' to `underscore' manually.%
+        }
+    }{}
+
+    \if@ordrel@opt@underscore@strings\relax
+        \PassOptionsToPackage{strings}{underscore}
+    \fi
+
+    \if@ordrel@catcode@warned\else
+        \AtBeginDocument{%
+            \@ifpackageloaded{underscore}%
+            {%
+                \if@ordrel@opt@underscore@strings\else
+                    \PackageWarning{ordrel}{%
+                        The `underscore' package was loaded after `ordrel' while %
+                        `ordrel' was not instructed to properly configure the former. %
+                        It may cause some commands to handle subscript embellishments %
+                        improperly. Please, provide `underscore' option to configure %
+                        the `underscore' package automatically, or `quiet' to %
+                        suppress this warning if you prefer to manually pass `strings' %
+                        to the `underscore' package or just don't care.%
+                    }
+                \fi
+            }{%
+                \begingroup
+                \def\emitwarning{%
+                    \PackageWarning{ordrel}{%
+                        Catcodes of `_' and/or `^' characters are non-standard. %
+                        It may cause some `ordrel` commands to handle subscript %
+                        embellishments improperly. If non-standard catcodes are %
+                        expected and the package works fine, suppress this warning %
+                        with the help of the `quiet' option.%
+                    }
+                }
+                \ifnum\the\catcode`\^=7\relax\else
+                    \@ordrel@catcode@warnedtrue
+                    \emitwarning
+                \fi
+                \ifnum\the\catcode`\_=8\relax\else
+                    \if@ordrel@catcode@warned\else
+                        \emitwarning
+                    \fi
+                \fi
+                \endgroup
+            }
+        }
+    \fi
+\fi
+
+\options{
+    % options
+    /ordrel/.new family,
+    /ordrel/layoutcmd/.new value        = \@ordrel@layoutcmd,
+    /ordrel/layoutclass/.new choice     = { xcmd, cmd, subscript, superscript },
+    /ordrel/relationsymbol/.new value,
+    /ordrel/spacingcmd/.new value       = \@ordrel@spacingcmd,
+    /ordrel/spacing/.new choice         = { no, rel },
+    /ordrel/spacing                     = rel,
+    /ordrel/labelpaddingcmd/.new value  = \@ordrel@labelpaddingcmd,
+    /ordrel/labelpadding/.new value     = 0.2em,
+    /ordrel/labelcmd/.new value         = \@ordrel@labelcmd@trampoline{\@ordrel@labelcmd},
+    /ordrel/decorator/.new value        = \ARG,
+    /ordrel/labeldec/.new value         = \textnormal{\ARG},
+    /ordrel/subdec/.new value           = \ARG,
+    /ordrel/supdec/.new value           = \ARG,
+    % label and script defaults
+    /ordrel/label/.new value            =,
+    /ordrel/subscript/.new value        =,
+    /ordrel/superscript/.new value      =,
+    % styles
+    /ordrel/xsymbol/.new style = {
+        /ordrel/layoutclass = xcmd,
+        /ordrel/relationsymbol = #1,
+    },
+    /ordrel/nxsymbol/.new style = {
+        /ordrel/layoutclass = cmd,
+        /ordrel/relationsymbol = #1,
+    },
+    /ordrel/symbol/.new style = {
+        /ordrel/layoutclass = subscript,
+        /ordrel/relationsymbol = #1,
+    },
+    /ordrel/->/.new style* = {
+        /ordrel/xsymbol = \xrightarrow,
+    },
+    /ordrel/<-/.new style* = {
+        /ordrel/xsymbol = \xleftarrow,
+    },
+    /ordrel/<->/.new style* = {
+        /ordrel/xsymbol = \xleftrightarrow,
+    },
+    /ordrel/eq/.new style* = {
+        /ordrel/xsymbol = \xlongequal,
+        /ordrel/labelpadding = -0.28em,
+    },
+    /ordrel/>/.new style* = {
+        /ordrel/symbol = >,
+    },
+    /ordrel/</.new style* = {
+        /ordrel/symbol = <,
+    },
+    /ordrel/le/.new style* = {
+        /ordrel/symbol = \le,
+    },
+    /ordrel/ge/.new style* = {
+        /ordrel/symbol = \ge,
+    },
+    /ordrel/raw/.new style* = {
+        /ordrel/spacing = no,
+    },
+    /ordrel/math/.new style* = {
+        /ordrel/labeldec = \ARG,
+    },
+    /ordrel/text/.new style* = {
+        /ordrel/labeldec = \textnormal{\ARG},
+    },
+    /ordrel/it/.new style* = {
+        /ordrel/labeldec = \textnormal{\textit{\ARG}},
+    },
+    /ordrel/bf/.new style* = {
+        /ordrel/labeldec = \textnormal{\textbf{\ARG}},
+    },
+    /ordrel/->,
+}
+
+\def\@ordrel@options@global{}
+
+
+\DeclareDocumentCommand{\@ordrel@labelpaddingcmd}{m}{%
+    \letoption{/ordrel/labelpadding}\@ordrel@labelpadding\relax%
+    \hspace*{\@ordrel@labelpadding}%
+    #1%
+    \hspace*{\@ordrel@labelpadding}%
+}
+
+\DeclareDocumentCommand{\@ordrel@layoutcmd}{m}{%
+    \letoption{/ordrel/layoutclass/@ord}\@ordrel@layoutclass\relax%
+    \letoption{/ordrel/relationsymbol}\@ordrel@relationsymbol\relax%
+    \@ordrel@util@switch@four{\@ordrel@layoutclass}%
+        {\@ordrel@relationsymbol{\option{/ordrel/labelpaddingcmd}{#1}}}% xcmd
+        {\@ordrel@relationsymbol{#1}}% cmd
+        {{\@ordrel@relationsymbol}_{#1}}% subscript
+        {{\@ordrel@relationsymbol}^{#1}}% superscript
+        {\PackgeError{ordrel}{Unknown arrow type option: `\option{/ordrel/layoutclass}'}}%
+}
+
+\DeclareDocumentCommand{\@ordrel@spacingcmd}{m}{%
+    \letoption{/ordrel/spacing/@ord}\@ordrel@spacing\relax%
+    \@ordrel@util@switch@two{\@ordrel@spacing}%
+        {{#1}}% no
+        {\mathrel{{#1}}}% rel
+        {\PackgeError{ordrel}{Unknown arrow type option: `\option{/ordrel/spacing}'}}%
+}
+
+\DeclareDocumentCommand{\@ordrel@labelcmd@trampoline}{m m m m}{%
+    \@ordrel@util@invoke@with@default{#4}{/ordrel/superscript}{%
+        \@ordrel@util@invoke@with@default{#3}{/ordrel/subscript}{%
+            \@ordrel@util@invoke@with@default{#2}{/ordrel/label}{#1}
+        }%
+    }%
+}
+
+\DeclareDocumentCommand{\@ordrel@labelcmd}{m m m}{%
+    \@ordrel@util@decorator@run{\option{/ordrel/decorator}}{%
+        \IfValueT{#1}{\@ordrel@util@decorator@run{\option{/ordrel/labeldec}}{#1}}%
+        % in case if the outer decorator enters text mode,
+        % we still should be able to use _ and ^
+        \ensuremath{%
+            \IfValueT{#2}{_\@ordrel@util@decorator@run{\option{/ordrel/subdec}}{#2}}%
+            \IfValueT{#3}{^\@ordrel@util@decorator@run{\option{/ordrel/supdec}}{#3}}%
+        }%
+    }%
+}
+
+
+\DeclareDocumentCommand{\@ordrel@impl}{m m m}{%
+    \def\@ordrel@symbol{%
+        \option{/ordrel/layoutcmd}{\option{/ordrel/labelcmd}{#1}{#2}{#3}}}%
+    \option{/ordrel/spacingcmd}{\@ordrel@symbol}%
+}
+
+\DeclareDocumentCommand{\@ordrel@new@label}{o m m m}{%
+    \NewDocumentCommand{#4}{s O{} e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options{#2,label=#3,##2}{##1}%
+            % take name from the outer command,
+            % embellishments - from the inner
+            \ensuremath{\@ordrel@impl{#1}{##3}{##4}}%
+        \endgroup%
+    }%
+}
+
+\DeclareDocumentCommand{\@ordrel@new@nolabel}{m m}{%
+    \NewDocumentCommand{#2}{s O{} m e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options{#1,##2}{##1}%
+            % take all arguments from the inner
+            \ensuremath{\@ordrel@impl{##3}{##4}{##5}}%
+        \endgroup%
+    }%
+}
+
+\DeclareDocumentCommand{\@ordrel@new@label@x}{o m m m e_ e^}{%
+    % #1 must always be -NoValue-
+    \NewDocumentCommand{#4}{s O{} e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options@x{#2,label=#3}{##2}{#5}{#6}{##1}
+            % take name from the outer command,
+            % local embellishments take precedence
+            \ensuremath{\@ordrel@impl{#1}{##3}{##4}}%
+        \endgroup%
+    }%
+}
+
+\DeclareDocumentCommand{\@ordrel@new@nolabel@x}{m m e_ e^}{%
+    \NewDocumentCommand{#2}{s O{} m e_ e^}{%
+        \begingroup%
+            % local options take precedence
+            \@ordrel@util@options@x{#1}{##2}{#3}{#4}{##1}%
+            % take name from the inner command,
+            % local embellishments take precedence
+            \ensuremath{\@ordrel@impl{##3}{##4}{##5}}%
+        \endgroup%
+    }%
+}
+
+
+\DeclareDocumentCommand{\@ordrel@util@options}{m m}{%
+    \options{/ordrel,}%
+    \@ordrel@options@global%
+    \optionsalso{#1,}%
+    \IfBooleanT{#2}{\optionsalso{spacing=no}}%
+}
+
+\DeclareDocumentCommand{\@ordrel@util@options@x}{m m m m m}{%
+    % it is simplier to duplicate some code
+    % from the command above than call it
+    \options{/ordrel,}%
+    \@ordrel@options@global%
+    \optionsalso{#1,}%
+    \IfValueT{#3}{\optionsalso{subscript=#3}}%
+    \IfValueT{#4}{\optionsalso{superscript=#4}}%
+    \optionsalso{#2}%
+    \IfBooleanT{#5}{\optionsalso{spacing=no}}%
+}
+
+\DeclareDocumentCommand{\@ordrel@util@switch@two}{m m m m}{%
+    \ifnum#1=0\relax#2\else%
+        \ifnum#1=1\relax#3\else#4\fi%
+    \fi%
+}
+\DeclareDocumentCommand{\@ordrel@util@switch@three}{m m m m m}{%
+    \ifnum#1=0\relax#2\else%
+        \ifnum#1=1\relax#3\else%
+            \ifnum#1=2\relax#4\else#5\fi%
+        \fi%
+    \fi%
+}
+\DeclareDocumentCommand{\@ordrel@util@switch@four}{m m m m m m}{%
+    \ifnum#1=0\relax#2\else%
+        \ifnum#1=1\relax#3\else%
+            \ifnum#1=2\relax#4\else%
+                \ifnum#1=3\relax#5\else#6\fi%
+            \fi%
+        \fi%
+    \fi%
+}
+
+\DeclareDocumentCommand{\@ordrel@util@decorator@run}{m m}{%
+    {\ensuremath{\def\ARG{#2}#1}}%
+}
+
+\DeclareDocumentCommand{\@ordrel@util@invoke@with@default}{m m m}{%
+    \IfValueTF{#1}{#3{#1}}{%
+        \ifoptionvoid{#2}%
+            {#3{#1}}% #1 is NoValue
+            {#3{\option{#2}}}%
+    }%
+}
+
+
+\DeclareDocumentCommand{\ordrel}{s O{} m e_ e^}{%
+    \begingroup%
+        \@ordrel@util@options{#2}{#1}%
+        \ensuremath{\@ordrel@impl{#3}{#4}{#5}}%
+    \endgroup%
+}
+
+\DeclareDocumentCommand{\NewOrdRel}{s O{}}{%
+    % check if options are correct early
+    {\options{/ordrel,#2}}%
+    \IfBooleanTF{#1}%
+        {\@ordrel@new@label{#2}}%
+        {\@ordrel@new@nolabel{#2}}%
+}
+
+\DeclareDocumentCommand{\NewOrdRelX}{s O{}}{%
+    % check if options are correct early
+    {\options{/ordrel,#2}}%
+    \IfBooleanTF{#1}%
+        {\@ordrel@new@label@x{#2}}%
+        {\@ordrel@new@nolabel@x{#2}}%
+}
+
+\DeclareDocumentCommand{\SetupOrdRel}{s m}{%
+    % validate options
+    {\options{/ordrel,#2}}%
+    \IfBooleanTF{#1}{%
+        \def\@ordrel@options@global{%
+            \optionsalso{#2,}%
+        }%
+    }{%
+        \expandafter\def\expandafter\@ordrel@options@global\expandafter{%
+            \@ordrel@options@global%
+            \optionsalso{#2,}%
+        }%
+    }%
+}
+
+%% 
+%%
+%% End of file `ordrel.sty'.
