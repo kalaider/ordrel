@@ -130,7 +130,8 @@
 % default values for indexes, etc.
 %
 % There are still lots of not-so-easy-to-solve small and
-% annoying issues such as spacing. One needs to surround the
+% annoying issues such as spacing, text mode style vs. math
+% mode style, etc. One needs to surround the
 % entire command with braces when the relation is meant to be
 % used standalone (i.e. in operator notation) as in the
 % following example:
@@ -138,7 +139,27 @@
 % \[ \ordrel*{hb} = (\ordrel*{po} \cup \ordrel*{sw})^+ \]
 %
 % {\thispkg} helps here a lot, providing starred and unstarred
-% versions of relation commands.
+% versions of relation commands. Regarding text vs. math mode
+% issue imagine the following purely fictional relation:
+%
+% \begingroup
+% \SetupOrdRel{
+%     allowintextmode,
+%     allowtextmode,
+%     nxsymbol*=\hbox,
+%     superscript*=\empty,
+% }
+% \NewOrdRelX*[->]{$\Sigma$}{\fictional}^{+^{+^+}}
+%
+% \[ \fictional \]
+%
+% It would be difficult to put it inside text line as it
+% drastically increases line spacing. When one just want to
+% textually refer to such relation, he/she probably better
+% just name it, e.g. \fictional-relation. {\thispkg} provides
+% a simple way to achieve this still using the same command.
+%
+% \endgroup
 
 
 % \section{Features}\label{sec:features}
@@ -155,6 +176,10 @@
 %    \item Flexible spacing to simplify use of the relation symbol in
 %          different contexts (as binary operator, in ``point-free''
 %          standalone operator notation, etc.).
+%    \item Special handling of ``text mode'' (as opposed to math mode),
+%          so that textual relation representation may benefit from
+%          having different, possibly much simplier style than its
+%          ``full-fledged'' math mode counterpart.
 %    \item \cs{NewOrdRel(X)} commands provide a convenient way of
 %          defining new \cs{ordrel}-like command with default option
 %          values, label, subscript and superscript.
@@ -170,7 +195,8 @@
 % \section{Introductory example}\label{sec:example}
 %
 % What follows is a small text and the corresponding {\LaTeX}
-% code that show a simple yet complete example of provided
+% code that show a simple yet complete example of (the most
+% common subset of) provided
 % features. The first line of the example code is not strictly
 % necessary but included for didactic purposes.
 %
@@ -179,15 +205,15 @@
 %    \NewOrdRel*{hb}{\hb}
 %    \NewOrdRel*{po}{\po}
 %
-%    The \textit{happens-before} relation denoted as \hb\ (or
-%    \hb[le] in some formal literature) is a partial order
+%    The \textit{happens-before} relation denoted as $\hb$ (or
+%    $\hb[le]$ in some formal literature) is a partial order
 %    relation defined as follows:
 %
 %    \[\hb* \ordrel[eq]{def} (\po* \cup \ordrel*{sw})^+,\]
 %
-%    where the \textit{program order} relation \po\ is a union
+%    where the \textit{program order} relation $\po$ is a union
 %    of all individual program orders $\po_i$ across all
-%    threads of a particular \textit{execution}, and \ordrel{sw}
+%    threads of a particular \textit{execution}, and $\ordrel{sw}$
 %    is a \textit{synchronizes-with} relation. We say ``$a$
 %    \textit{happens-before} $b$'' and write $a \hb b$ if and
 %    only if either of the following holds:
@@ -198,8 +224,8 @@
 %        \item there is some $x$, such that $a \hb x \hb b$.
 %    \end{enumerate}
 %
-%    In some literature one may find variants of \hb, such as
-%    \hb[label=ihb], \hb[label=ghb], etc. but they appear in
+%    In some literature one may find variants of $\hb$, such as
+%    $\hb[label=ihb]$, $\hb[label=ghb]$, etc. but they appear in
 %    specialized contexts and are out of scope of our generic
 %    discussion.
 % \end{examplebox}
@@ -210,15 +236,15 @@
 % \NewOrdRel*{hb}{\hb}
 % \NewOrdRel*{po}{\po}
 %
-% The \textit{happens-before} relation denoted as \hb\ (or
-% \hb[le] in some formal literature) is a partial order
+% The \textit{happens-before} relation denoted as $\hb$ (or
+% $\hb[le]$ in some formal literature) is a partial order
 % relation defined as follows:
 %
 % \[\hb* \ordrel[eq]{def} (\po* \cup \ordrel*{sw})^+,\]
 %
-% where the \textit{program order} relation \po\ is a union
+% where the \textit{program order} relation $\po$ is a union
 % of all individual program orders $\po_i$ across all
-% threads of a particular \textit{execution}, and \ordrel{sw}
+% threads of a particular \textit{execution}, and $\ordrel{sw}$
 % is a \textit{synchronizes-with} relation. We say ``$a$
 % \textit{happens-before} $b$'' and write $a \hb b$ if and
 % only if either of the following holds:
@@ -229,8 +255,8 @@
 %     \item there is some $x$, such that $a \hb x \hb b$.
 % \end{enumerate}
 %
-% In some literature one may find variants of \hb, such as
-% \hb[label=ihb], \hb[label=ghb], etc. but they appear in
+% In some literature one may find variants of $\hb$, such as
+% $\hb[label=ihb]$, $\hb[label=ghb]$, etc. but they appear in
 % specialized contexts and are out of scope of our generic
 % discussion.
 % \end{verbatim}
@@ -306,11 +332,11 @@
 %     \NewOrdRelX[->]{\myarrowj}_j
 %     \NewOrdRelX*[eq]{def}{\mystarreddef}^*
 %
-%     \myarrowj[it]{happens-before}
-%     \myarrowj[it]{happens-before}_k
-%     \mystarreddef[bf]
-%     \mystarreddef[bf]^+
-%     \mystarreddef[label=$\triangle$]^+
+%     $\myarrowj[it]{happens-before}$
+%     $\myarrowj[it]{happens-before}_k$
+%     $\mystarreddef[bf]$
+%     $\mystarreddef[bf]^+$
+%     $\mystarreddef[label=$\triangle$]^+$
 % \end{examplebox}
 %
 % \begin{examplebox}
@@ -318,11 +344,11 @@
 % \NewOrdRelX[->]{\myarrowj}_j
 % \NewOrdRelX*[eq]{def}{\mystarreddef}^*
 %
-% \myarrowj[it]{happens-before}
-% \myarrowj[it]{happens-before}_k
-% \mystarreddef[bf]
-% \mystarreddef[bf]^+
-% \mystarreddef[label=$\triangle$]^+
+% $\myarrowj[it]{happens-before}$
+% $\myarrowj[it]{happens-before}_k$
+% $\mystarreddef[bf]$
+% $\mystarreddef[bf]^+$
+% $\mystarreddef[label=$\triangle$]^+$
 % \end{verbatim}
 % \end{examplebox}
 %
@@ -378,6 +404,216 @@
 %
 % All \cs{ordrel}-like commands take the same options.
 %
+% \DescribeMacro{allowintextmode=\meta{boolean}}
+% \DescribeMacro{allowtextmode=\meta{boolean}}
+% \DescribeMacro{textmode=\meta{boolean}}
+% Specifies the behavior of {\thispkg} regarding ``text mode''. What is
+% called ``text mode'' here is not strictly the text mode from {\TeX}
+% point of view but rather an ``alternative display mode''. It is,
+% however, triggered automatically if the \cs{ordrel}-like command
+% is issued from inside the true text mode.
+%
+% The |allowintextmode| option, when set to |true|, allows \cs{ordrel}
+% to be used inside the text mode. Otherwise (default behavior),
+% {\thispkg} will complain about inappropriate usage context. Such
+% behavior is quite natural as one should not normally mix these
+% two separate worlds, and also is default in {\TeX} for almost
+% any math mode command. Moreover, as \cs{ordrel} is able to handle
+% subscripts and superscripts, it may seem odd to encounter math mode
+% specific syntax in text mode, and it may also confuse some
+% linters and syntax highlighters.
+%
+% The |allowtextmode| option specifies whether the ``alternative
+% display mode'' is used at all. In spite of its name, it is
+% completely independent from the |allowintextmode| option. What
+% it does is just internally allow preferring \textit{starred}
+% versions of some options if |textmode=true|.
+%
+% |textmode| specifies if the current display mode is text mode
+% or math mode. It may be set manually (either by providing
+% |textmode| or |textmode=true| option or by using the convenient
+% |*| style). When |allowtextmode| is not set, this option changes
+% nothing. When \cs{ordrel}-like command is issued from inside
+% text mode and |allowintextmode| is set, this option is also set
+% automatically.
+%
+% Consider the following example. Here text mode usage is allowed
+% globally, |allowtextmode| is set to |true| and the command is
+% configured to look differently in two modes. Note that since
+% the decision wether some option is given is based mostly on
+% whether it is blank. In order to suppress superscript in text
+% mode one need to explicitly state |superscript*=\empty| rather
+% than just |superscript*=| or |superscript*={}|.
+%
+% \begin{examplebox}
+%     \SetupOrdRel*{
+%         allowintextmode,
+%         allowtextmode,
+%     }
+%     From math mode:
+%         $\ordrel{rel}_x^y$ \\
+%     From math mode, forced text display mode:
+%         $\ordrel[*]{rel}_x^y$ \\
+%     From text mode:
+%         \ordrel{rel}_x^y \\
+%     \textit{<...Configure some styles...>}\\
+%     \SetupOrdRel{
+%         decorator     = \colorbox{red!80!black}{\ARG},
+%         decorator*    = \colorbox{green!50!black}{\ARG},
+%         nxsymbol*     = \empty,
+%         labeldec      = \textnormal{\textcolor{white}{\ARG}},
+%         subdec*       = \textbf{\textcolor{yellow!70}{\ARG}},
+%     }
+%     From math mode:
+%         $\ordrel{rel}_x^y$ \\
+%     From math mode, forced text display mode:
+%         $\ordrel[*]{rel}_x^y$ \\
+%     From text mode:
+%         \ordrel{rel}_x^y \\
+%     \textit{<...Configure implicit sub- and superscripts...>}\\
+%     \SetupOrdRel{
+%         subscript     = m,
+%         subscript*    = t,
+%         superscript   = M,
+%         superscript*  = \empty,
+%     }
+%     From math mode:
+%         $\ordrel{rel}$ \\
+%     From math mode, forced text display mode:
+%         $\ordrel[*]{rel}$ \\
+%     From text mode:
+%         \ordrel{rel} \\
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \SetupOrdRel*{
+%     allowintextmode,
+%     allowtextmode,
+% }
+% From math mode:
+%     $\ordrel{rel}_x^y$ \\
+% From math mode, forced text display mode:
+%     $\ordrel[*]{rel}_x^y$ \\
+% From text mode:
+%     \ordrel{rel}_x^y \\
+% \textit{<...Configure some styles...>}\\
+% \SetupOrdRel{
+%     decorator     = \colorbox{red!80!black}{\ARG},
+%     decorator*    = \colorbox{green!50!black}{\ARG},
+%     nxsymbol*     = \empty,
+%     labeldec      = \textnormal{\textcolor{white}{\ARG}},
+%     subdec*       = \textbf{\textcolor{yellow!70}{\ARG}},
+% }
+% From math mode:
+%     $\ordrel{rel}_x^y$ \\
+% From math mode, forced text display mode:
+%     $\ordrel[*]{rel}_x^y$ \\
+% From text mode:
+%     \ordrel{rel}_x^y \\
+% \textit{<...Configure implicit sub- and superscripts...>}\\
+% \SetupOrdRel{
+%     subscript     = m,
+%     subscript*    = t,
+%     superscript   = M,
+%     superscript*  = \empty,
+% }
+% From math mode:
+%     $\ordrel{rel}$ \\
+% From math mode, forced text display mode:
+%     $\ordrel[*]{rel}$ \\
+% From text mode:
+%     \ordrel{rel} \\
+% \end{verbatim}
+% \end{examplebox}
+%
+% The only problem arises with options that cannot be void, e.g.
+% choice options. Such options will always be preferred over
+% unstarred in text mode. To overcome this, {\thispkg} assigns
+% special meaning to the ``|*|'' option value. All starred choice
+% options (|layoutclass|, |spacing|, to name some) can take
+% additional ``void'' value denoted as ``|*|'', that is treated
+% internally as ``no value assigned, use value from unstarred
+% version''. The example follows.
+%
+% \begin{examplebox}
+%     \textit{<Math / text mode, |spacing=no|>}\\
+%     \SetupOrdRel*{le, allowtextmode, spacing=no}
+%     Default behavior:
+%         $a \ordrel{rel} b$        /
+%         $a \ordrel[*]{rel} b$    \\
+%     \SetupOrdRel*{le, allowtextmode, spacing=no, spacing*=rel}
+%     Manual override in text mode:
+%         $a \ordrel{rel} b$        /
+%         $a \ordrel[*]{rel} b$    \\
+%     \SetupOrdRel*{le, allowtextmode, spacing=no, spacing*=*}
+%     Manual reset in text mode:
+%         $a \ordrel{rel} b$        /
+%         $a \ordrel[*]{rel} b$    \\\\
+%     \textit{<Math / text mode, |layoutclass=subscript| (set by |le|)>}\\
+%     \SetupOrdRel*{le, allowtextmode}
+%     Default behavior:
+%         $a \ordrel{rel} b$        /
+%         $a \ordrel[*]{rel} b$    \\
+%     \SetupOrdRel*{le, allowtextmode, layoutclass*=superscript}
+%     Manual override in text mode:
+%         $a \ordrel{rel} b$        /
+%         $a \ordrel[*]{rel} b$    \\
+%     \SetupOrdRel*{le, allowtextmode, layoutclass*=*}
+%     Manual reset in text mode:
+%         $a \ordrel{rel} b$        /
+%         $a \ordrel[*]{rel} b$
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \textit{<Math / text mode, |spacing=no|>}\\
+% \SetupOrdRel*{le, allowtextmode, spacing=no}
+% Default behavior:
+%     $a \ordrel{rel} b$        /
+%     $a \ordrel[*]{rel} b$    \\
+% \SetupOrdRel*{le, allowtextmode, spacing=no, spacing*=rel}
+% Manual override in text mode:
+%     $a \ordrel{rel} b$        /
+%     $a \ordrel[*]{rel} b$    \\
+% \SetupOrdRel*{le, allowtextmode, spacing=no, spacing*=*}
+% Manual reset in text mode:
+%     $a \ordrel{rel} b$        /
+%     $a \ordrel[*]{rel} b$    \\\\
+% \textit{<Math / text mode, |layoutclass=subscript| (set by |le|)>}\\
+% \SetupOrdRel*{le, allowtextmode}
+% Default behavior:
+%     $a \ordrel{rel} b$        /
+%     $a \ordrel[*]{rel} b$    \\
+% \SetupOrdRel*{le, allowtextmode, layoutclass*=superscript}
+% Manual override in text mode:
+%     $a \ordrel{rel} b$        /
+%     $a \ordrel[*]{rel} b$    \\
+% \SetupOrdRel*{le, allowtextmode, layoutclass*=*}
+% Manual reset in text mode:
+%     $a \ordrel{rel} b$        /
+%     $a \ordrel[*]{rel} b$
+% \end{verbatim}
+% \end{examplebox}
+%
+% Almost any option and style currently defined (except advanced options,
+% see \cref{sec:avdanced-options}) has its starred counterpart. Please,
+% consult implementation section for more details.
+%
+% \begin{examplebox}
+%     \SetupOrdRel*{allowtextmode, ->, <-*}
+%     Math mode: $\ordrel{rel}$. \\
+%     Text mode: $\ordrel[*]{rel}$.
+% \end{examplebox}
+%
+% \begin{examplebox}
+% \begin{verbatim}
+% \SetupOrdRel*{allowtextmode, ->, <-*}
+% Math mode: $\ordrel{rel}$. \\
+% Text mode: $\ordrel[*]{rel}$.
+% \end{verbatim}
+% \end{examplebox}
+%
 % \DescribeMacro{layoutclass=\meta{xcmd, cmd, subscript, superscript}}
 % \DescribeMacro{relationsymbol=\meta{cmd1, hbox}}
 % The |layoutclass| option determines relation symbol layout and
@@ -423,17 +659,17 @@
 %         layoutclass = xcmd,
 %         relationsymbol = \myextarrow,
 %     }
-%     \ordrel{under}
+%     $\ordrel{under}$
 %     \SetupOrdRel*{
 %         layoutclass = cmd,
 %         relationsymbol = \mynonextdef,
 %     }
-%     \ordrel{$\triangle$}
+%     $\ordrel{$\triangle$}$
 %     \SetupOrdRel*{
 %         layoutclass = subscript,
 %         relationsymbol = \myrelsymbol,
 %     }
-%     \ordrel{square}
+%     $\ordrel{square}$
 % \end{examplebox}
 %
 % \begin{examplebox}
@@ -446,17 +682,17 @@
 %     layoutclass = xcmd,
 %     relationsymbol = \myextarrow,
 % }
-% \ordrel{under}
+% $\ordrel{under}$
 % \SetupOrdRel*{
 %     layoutclass = cmd,
 %     relationsymbol = \mynonextdef,
 % }
-% \ordrel{$\triangle$}
+% $\ordrel{$\triangle$}$
 % \SetupOrdRel*{
 %     layoutclass = subscript,
 %     relationsymbol = \myrelsymbol,
 % }
-% \ordrel{square}
+% $\ordrel{square}$
 % \end{verbatim}
 % \end{examplebox}
 %
@@ -649,21 +885,21 @@
 %     \def\unpad#1{\!\!#1\!\!}
 %
 %     \SetupOrdRel*{eq}
-%     \ordrel[labelpadding=-0.28em]{$\triangle$}
-%     \ordrel[labelpaddingcmd=\unpad]{$\triangle$}
+%     $\ordrel[labelpadding=-0.28em]{$\triangle$}$
+%     $\ordrel[labelpaddingcmd=\unpad]{$\triangle$}$
 %
 %     \def\labelcmd#1#2#3{{}\IfValueT{#2}{_{#2}}\IfValueT{#3}{^{#3}}#1}
 %
 %     \makeatletter
 %         \SetupOrdRel*{labelcmd=\@ordrel@labelcmd@trampoline{\labelcmd}}
 %     \makeatother
-%     \ordrel{label}_{sub}^{sup}
+%     $\ordrel{label}_{sub}^{sup}$
 %
 %     \def\layoutcmd#1{\fbox{#1}}
 %
 %     \SetupOrdRel*{<}
-%     \ordrel[layoutcmd=\layoutcmd]{label}_{sub}^{sup}
-%     \ordrel[nxsymbol=\fbox]{label}_{sub}^{sup}
+%     $\ordrel[layoutcmd=\layoutcmd]{label}_{sub}^{sup}$
+%     $\ordrel[nxsymbol=\fbox]{label}_{sub}^{sup}$
 % \end{examplebox}
 %
 % \begin{examplebox}
@@ -671,22 +907,21 @@
 % \def\unpad#1{\!\!#1\!\!}
 %
 % \SetupOrdRel*{eq}
-% \ordrel{$\triangle$}
-% \ordrel[labelpadding=-0.28em]{$\triangle$}
-% \ordrel[labelpaddingcmd=\unpad]{$\triangle$}
+% $\ordrel[labelpadding=-0.28em]{$\triangle$}$
+% $\ordrel[labelpaddingcmd=\unpad]{$\triangle$}$
 %
 % \def\labelcmd#1#2#3{{}\IfValueT{#2}{_{#2}}\IfValueT{#3}{^{#3}}#1}
 %
 % \makeatletter
 %     \SetupOrdRel*{labelcmd=\@ordrel@labelcmd@trampoline{\labelcmd}}
 % \makeatother
-% \ordrel{label}_{sub}^{sup}
+% $\ordrel{label}_{sub}^{sup}$
 %
 % \def\layoutcmd#1{\fbox{#1}}
 %
 % \SetupOrdRel*{<}
-% \ordrel[layoutcmd=\layoutcmd]{label}_{sub}^{sup}
-% \ordrel[nxsymbol=\fbox]{label}_{sub}^{sup}
+% $\ordrel[layoutcmd=\layoutcmd]{label}_{sub}^{sup}$
+% $\ordrel[nxsymbol=\fbox]{label}_{sub}^{sup}$
 % \end{verbatim}
 % \end{examplebox}
 %
@@ -717,11 +952,11 @@
 %         labelcolor/.new color = black,
 %         labeldec = \textnormal{\textcolor{\option{/ordrel/labelcolor}}{\ARG}},
 %     }
-%     Using relative option paths: \ordrel[>>]{relation}, \\
-%     Using absolute option paths: \ordrel[<<]{relation}, \\
-%     Using plain \pkg{options}: \ordrel[dbl->]{relation}, \\
-%     Using custom options family: \ordrel[/mystyles/<-dbl]{relation}, \\
-%     Consuming custom option in decorator: \ordrel[labelcolor=green]{relation}, \\
+%     Using relative option paths: $\ordrel[>>]{relation}$, \\
+%     Using absolute option paths: $\ordrel[<<]{relation}$, \\
+%     Using plain \pkg{options}: $\ordrel[dbl->]{relation}$, \\
+%     Using custom options family: $\ordrel[/mystyles/<-dbl]{relation}$, \\
+%     Consuming custom option in decorator: $\ordrel[labelcolor=green]{relation}$, \\
 % \end{examplebox}
 %
 % \begin{examplebox}
@@ -737,11 +972,11 @@
 %     labelcolor/.new color = black,
 %     labeldec = \textnormal{\textcolor{\option{/ordrel/labelcolor}}{\ARG}},
 % }
-% Using relative option paths: \ordrel[>>]{relation}, \\
-% Using absolute option paths: \ordrel[<<]{relation}, \\
-% Using plain \pkg{options}: \ordrel[dbl->]{relation}, \\
-% Using custom options family: \ordrel[/mystyles/<-dbl]{relation}, \\
-% Consuming custom option in decorator: \ordrel[labelcolor=green]{relation}, \\
+% Using relative option paths: $\ordrel[>>]{relation}$, \\
+% Using absolute option paths: $\ordrel[<<]{relation}$, \\
+% Using plain \pkg{options}: $\ordrel[dbl->]{relation}$, \\
+% Using custom options family: $\ordrel[/mystyles/<-dbl]{relation}$, \\
+% Consuming custom option in decorator: $\ordrel[labelcolor=green]{relation}$, \\
 % \end{verbatim}
 % \end{examplebox}
 
@@ -908,75 +1143,146 @@
 \options{
     % options
     /ordrel/.new family,
+    /ordrel/allowintextmode/.new toggle = false,
+    /ordrel/allowtextmode/.new toggle   = false,
+    /ordrel/textmode/.new toggle        = false,
     /ordrel/layoutcmd/.new value        = \@ordrel@layoutcmd,
     /ordrel/layoutclass/.new choice     = { xcmd, cmd, subscript, superscript },
+    /ordrel/layoutclass*/.new choice    = { xcmd, cmd, subscript, superscript, * },
+    /ordrel/layoutclass*                = *,
     /ordrel/relationsymbol/.new value,
+    /ordrel/relationsymbol*/.new value,
     /ordrel/spacingcmd/.new value       = \@ordrel@spacingcmd,
     /ordrel/spacing/.new choice         = { no, rel },
+    /ordrel/spacing*/.new choice        = { no, rel, * },
     /ordrel/spacing                     = rel,
+    /ordrel/spacing*                    = *,
     /ordrel/labelpaddingcmd/.new value  = \@ordrel@labelpaddingcmd,
     /ordrel/labelpadding/.new value     = 0.2em,
+    /ordrel/labelpadding*/.new value    = 0.2em,
     /ordrel/labelcmd/.new value         = \@ordrel@labelcmd@trampoline{\@ordrel@labelcmd},
     /ordrel/decorator/.new value        = \ARG,
+    /ordrel/decorator*/.new value,
     /ordrel/labeldec/.new value         = \textnormal{\ARG},
+    /ordrel/labeldec*/.new value,
     /ordrel/subdec/.new value           = \ARG,
+    /ordrel/subdec*/.new value,
     /ordrel/supdec/.new value           = \ARG,
+    /ordrel/supdec*/.new value,
     % label and script defaults
     /ordrel/label/.new value            =,
+    /ordrel/label*/.new value,
     /ordrel/subscript/.new value        =,
+    /ordrel/subscript*/.new value,
     /ordrel/superscript/.new value      =,
+    /ordrel/superscript*/.new value,
     % styles
     /ordrel/xsymbol/.new style = {
         /ordrel/layoutclass = xcmd,
         /ordrel/relationsymbol = #1,
     },
+    /ordrel/xsymbol*/.new style = {
+        /ordrel/layoutclass* = xcmd,
+        /ordrel/relationsymbol* = #1,
+    },
     /ordrel/nxsymbol/.new style = {
         /ordrel/layoutclass = cmd,
         /ordrel/relationsymbol = #1,
+    },
+    /ordrel/nxsymbol*/.new style = {
+        /ordrel/layoutclass* = cmd,
+        /ordrel/relationsymbol* = #1,
     },
     /ordrel/symbol/.new style = {
         /ordrel/layoutclass = subscript,
         /ordrel/relationsymbol = #1,
     },
+    /ordrel/symbol*/.new style = {
+        /ordrel/layoutclass* = subscript,
+        /ordrel/relationsymbol* = #1,
+    },
     /ordrel/->/.new style* = {
         /ordrel/xsymbol = \xrightarrow,
+    },
+    /ordrel/->*/.new style* = {
+        /ordrel/xsymbol* = \xrightarrow,
     },
     /ordrel/<-/.new style* = {
         /ordrel/xsymbol = \xleftarrow,
     },
+    /ordrel/<-*/.new style* = {
+        /ordrel/xsymbol* = \xleftarrow,
+    },
     /ordrel/<->/.new style* = {
         /ordrel/xsymbol = \xleftrightarrow,
+    },
+    /ordrel/<->*/.new style* = {
+        /ordrel/xsymbol* = \xleftrightarrow,
     },
     /ordrel/eq/.new style* = {
         /ordrel/xsymbol = \xlongequal,
         /ordrel/labelpadding = -0.28em,
     },
+    /ordrel/eq*/.new style* = {
+        /ordrel/xsymbol* = \xlongequal,
+        /ordrel/labelpadding* = -0.28em,
+    },
     /ordrel/>/.new style* = {
         /ordrel/symbol = >,
+    },
+    /ordrel/>*/.new style* = {
+        /ordrel/symbol* = >,
     },
     /ordrel/</.new style* = {
         /ordrel/symbol = <,
     },
+    /ordrel/<*/.new style* = {
+        /ordrel/symbol* = <,
+    },
     /ordrel/le/.new style* = {
         /ordrel/symbol = \le,
+    },
+    /ordrel/le*/.new style* = {
+        /ordrel/symbol* = \le,
     },
     /ordrel/ge/.new style* = {
         /ordrel/symbol = \ge,
     },
-    /ordrel/raw/.new style* = {
-        /ordrel/spacing = no,
+    /ordrel/ge*/.new style* = {
+        /ordrel/symbol* = \ge,
+    },
+    /ordrel/empty/.new style* = {
+        /ordrel/nxsymbol = \empty,
+    },
+    /ordrel/empty*/.new style* = {
+        /ordrel/nxsymbol* = \empty,
+    },
+    /ordrel/*/.new style* = {
+        /ordrel/textmode = true,
     },
     /ordrel/math/.new style* = {
         /ordrel/labeldec = \ARG,
     },
+    /ordrel/math*/.new style* = {
+        /ordrel/labeldec* = \ARG,
+    },
     /ordrel/text/.new style* = {
         /ordrel/labeldec = \textnormal{\ARG},
+    },
+    /ordrel/text*/.new style* = {
+        /ordrel/labeldec* = \textnormal{\ARG},
     },
     /ordrel/it/.new style* = {
         /ordrel/labeldec = \textnormal{\textit{\ARG}},
     },
+    /ordrel/it*/.new style* = {
+        /ordrel/labeldec* = \textnormal{\textit{\ARG}},
+    },
     /ordrel/bf/.new style* = {
         /ordrel/labeldec = \textnormal{\textbf{\ARG}},
+    },
+    /ordrel/bf*/.new style* = {
+        /ordrel/labeldec* = \textnormal{\textbf{\ARG}},
     },
     /ordrel/->,
 }
@@ -1002,7 +1308,7 @@
 %
 %    \begin{macrocode}
 \DeclareDocumentCommand{\@ordrel@labelpaddingcmd}{m}{%
-    \letoption{/ordrel/labelpadding}\@ordrel@labelpadding\relax%
+    \@ordrel@util@letoption{/ordrel/labelpadding}{}\@ordrel@labelpadding\relax%
     \hspace*{\@ordrel@labelpadding}%
     #1%
     \hspace*{\@ordrel@labelpadding}%
@@ -1029,14 +1335,14 @@
 %
 %    \begin{macrocode}
 \DeclareDocumentCommand{\@ordrel@layoutcmd}{m}{%
-    \letoption{/ordrel/layoutclass/@ord}\@ordrel@layoutclass\relax%
-    \letoption{/ordrel/relationsymbol}\@ordrel@relationsymbol\relax%
+    \@ordrel@util@letoption{/ordrel/layoutclass}{/@ord}\@ordrel@layoutclass\relax%
+    \@ordrel@util@letoption{/ordrel/relationsymbol}{}\@ordrel@relationsymbol\relax%
     \@ordrel@util@switch@four{\@ordrel@layoutclass}%
-        {\@ordrel@relationsymbol{\option{/ordrel/labelpaddingcmd}{#1}}}% xcmd
+        {\@ordrel@relationsymbol{\@ordrel@util@option{/ordrel/labelpaddingcmd}{}{#1}}}% xcmd
         {\@ordrel@relationsymbol{#1}}% cmd
         {{\@ordrel@relationsymbol}_{#1}}% subscript
         {{\@ordrel@relationsymbol}^{#1}}% superscript
-        {\PackgeError{ordrel}{Unknown arrow type option: `\option{/ordrel/layoutclass}'}}%
+        {\PackgeError{ordrel}{Unknown layout class option: `\@ordrel@layoutclass'}}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1058,11 +1364,11 @@
 %
 %    \begin{macrocode}
 \DeclareDocumentCommand{\@ordrel@spacingcmd}{m}{%
-    \letoption{/ordrel/spacing/@ord}\@ordrel@spacing\relax%
+    \@ordrel@util@letoption{/ordrel/spacing}{/@ord}\@ordrel@spacing\relax%
     \@ordrel@util@switch@two{\@ordrel@spacing}%
         {{#1}}% no
         {\mathrel{{#1}}}% rel
-        {\PackgeError{ordrel}{Unknown arrow type option: `\option{/ordrel/spacing}'}}%
+        {\PackgeError{ordrel}{Unknown spacing option: `\@ordrel@spacing'}}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1128,13 +1434,13 @@
 %
 %    \begin{macrocode}
 \DeclareDocumentCommand{\@ordrel@labelcmd}{m m m}{%
-    \@ordrel@util@decorator@run{\option{/ordrel/decorator}}{%
-        \IfValueT{#1}{\@ordrel@util@decorator@run{\option{/ordrel/labeldec}}{#1}}%
+    \@ordrel@util@decorator@run{/ordrel/decorator}{%
+        \IfValueT{#1}{\@ordrel@util@decorator@run{/ordrel/labeldec}{#1}}%
         % in case if the outer decorator enters text mode,
         % we still should be able to use _ and ^
         \ensuremath{%
-            \IfValueT{#2}{_\@ordrel@util@decorator@run{\option{/ordrel/subdec}}{#2}}%
-            \IfValueT{#3}{^\@ordrel@util@decorator@run{\option{/ordrel/supdec}}{#3}}%
+            \IfValueT{#2}{_\@ordrel@util@decorator@run{/ordrel/subdec}{#2}}%
+            \IfValueT{#3}{^\@ordrel@util@decorator@run{/ordrel/supdec}{#3}}%
         }%
     }%
 }
@@ -1259,6 +1565,24 @@
 
 % \subsection{Various utility commands}
 
+% \begin{macro}{\@ordrel@util@validatetextmode}
+%    Emits error when in text mode and |allowintextmode=false|.
+%
+%    The command is supposed to be invoked from text mode.
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@validatetextmode}{}{%
+    \iftoggle{/ordrel/allowintextmode}{}{%
+        \PackageError{ordrel}{The command is not allowed to be %
+            invoked from text mode. Either enable text mode usage %
+            by setting `allowtextmode=true', or wrap the command %
+            with `$...$'.%
+        }%
+    }%
+}
+%    \end{macrocode}
+% \end{macro}
+
 % \begin{macro}{\@ordrel@util@options}
 %    Sets up options taking spacing issues into account.
 %
@@ -1273,6 +1597,10 @@
     \@ordrel@options@global%
     \optionsalso{#1,}%
     \IfBooleanT{#2}{\optionsalso{spacing=no}}%
+    \ifmmode\else%
+        \@ordrel@util@validatetextmode%
+        \optionsalso{textmode=true}%
+    \fi%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1300,6 +1628,10 @@
     \IfValueT{#4}{\optionsalso{superscript=#4}}%
     \optionsalso{#2}%
     \IfBooleanT{#5}{\optionsalso{spacing=no}}%
+    \ifmmode\else%
+        \@ordrel@util@validatetextmode%
+        \optionsalso{textmode=true}%
+    \fi%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1337,16 +1669,102 @@
 % \end{macro}
 % \end{macro}
 
-% \begin{macro}{\@ordrel@util@decorator@run}
-%    Sets up \cs{ARG} macro and calls the given handler without arguments inside math mode.
+% \begin{macro}{\@ordrel@util@option}
+% \begin{macro}{\@ordrel@util@letoption}
+% \begin{macro}{\@ordrel@util@ifoptionvoid}
+%    \begin{syntax}
+%        \cs{@ordrel@util@option}\oarg{optionscmd}\Arg{optionbasename}\Arg{optionsuffix}
+%        \cs{@ordrel@util@letoption}\Arg{optionbasename}\Arg{optionsuffix}\Arg{newcmdname}
+%        \cs{@ordrel@util@ifoptionvoid}\Arg{optionbasename}\Arg{truehandler}\Arg{falsehandler}
+%    \end{syntax}
+%
+%    \thispkg-specific mode-dependent option handling.
+%    If |allowtextmode=true| and in text mode (i.e. the
+%    |textmode| option is set to |true|), the starred
+%    version of the given option is preferred, unless
+%    the option type is |choice| and its value is |*|.
+%
+%    \cs{@ordrel@util@option} takes the following arguments:
+%
 %    \begin{arguments}
-%        \item No-arg handler expecing \cs{ARG} set
+%        \item command to issue with the given option name
+%              (defaults to \cs{option} but may be e.g.
+%              a wrapper around \cs{letoption} or
+%              \cs{ifoptionvoid}, see below)
+%        \item base option name (i.e. without any
+%              transformers or other suffixes) to which
+%              the star is appended (if necessary)
+%        \item all optional suffixes of the option,
+%              may be empty
+%    \end{arguments}
+%
+%    \cs{@ordrel@util@letoption} is similar to \cs{letoption}
+%    from \pkg{options} but takes suffix as a separate argument:
+%
+%    \begin{arguments}
+%        \item base option name
+%        \item optional suffix
+%        \item command to be defined with \cs{letoption}
+%    \end{arguments}
+%
+%    \cs{@ordrel@util@ifoptionvoid} is much similar to
+%    \cs{ifoptionvoid} in arguments it takes:
+%
+%    \begin{arguments}
+%        \item base option name
+%        \item handler for the positive case
+%        \item handler for the negative case
+%    \end{arguments}
+%
+%    It doesn't take option suffix as there is no such need.
+%
+%    \begin{macrocode}
+\DeclareDocumentCommand{\@ordrel@util@option}{O{\option} m m}{%
+    \let\@ordrel@util@option@proceed\@firstoftwo%
+    \iftoggle{/ordrel/allowtextmode}{%
+        \iftoggle{/ordrel/textmode}{%
+            \expandafter\ifoptionvoid{#2*}{}{%
+                \expandafter\ifoptiontype{#2*}{choice}{%
+                    \expandafter\ifoptionequal{#2*}{*}{}{%
+                        \let\@ordrel@util@option@proceed\@secondoftwo%
+                    }%
+                }{%
+                    \let\@ordrel@util@option@proceed\@secondoftwo%
+                }%
+            }%
+        }{}%
+    }{}%
+    \@ordrel@util@option@proceed{%
+        #1{#2#3}%
+    }{%
+        \expandafter#1{#2*#3}%
+    }%
+}
+\DeclareDocumentCommand{\@ordrel@util@letoption}{m m m}{%
+    \def\@ordrel@util@letoption@cmd##1{\letoption{##1}#3}%
+    \@ordrel@util@option[\@ordrel@util@letoption@cmd]{#1}{#2}%
+}
+\DeclareDocumentCommand{\@ordrel@util@ifoptionvoid}{m m m}{%
+    \def\@ordrel@util@ifoptionvoid@cmd##1{\ifoptionvoid{##1}{#2}{#3}}%
+    \@ordrel@util@option[\@ordrel@util@ifoptionvoid@cmd]{#1}{}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+
+% \begin{macro}{\@ordrel@util@decorator@run}
+%    Sets up \cs{ARG} macro and calls the given handler represented
+%    by its corresponding option name without arguments inside math mode.
+%    \begin{arguments}
+%        \item (Unstarred) option name pointing to no-arg
+%              handler that expects \cs{ARG} to be defined
 %        \item Argument to handler
 %    \end{arguments}
 %
 %    \begin{macrocode}
 \DeclareDocumentCommand{\@ordrel@util@decorator@run}{m m}{%
-    {\ensuremath{\def\ARG{#2}#1}}%
+    {\ensuremath{\def\ARG{#2}\@ordrel@util@option{#1}{}}}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1364,9 +1782,9 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand{\@ordrel@util@invoke@with@default}{m m m}{%
     \IfValueTF{#1}{#3{#1}}{%
-        \ifoptionvoid{#2}%
+        \@ordrel@util@ifoptionvoid{#2}%
             {#3{#1}}% #1 is NoValue
-            {#3{\option{#2}}}%
+            {#3{\@ordrel@util@option{#2}{}}}%
     }%
 }
 %    \end{macrocode}
@@ -1409,12 +1827,8 @@
 %        \cs{NewOrdRel}\oarg{options}\Arg{command}
 %        \cs{NewOrdRel}\meta{*}\oarg{options}\Arg{label}\Arg{command}
 %    \end{syntax}
-%    The commands validates option list before proceeding
-%    with new command definition.
 %    \begin{macrocode}
 \DeclareDocumentCommand{\NewOrdRel}{s O{}}{%
-    % check if options are correct early
-    {\options{/ordrel,#2}}%
     \IfBooleanTF{#1}%
         {\@ordrel@new@label{#2}}%
         {\@ordrel@new@nolabel{#2}}%
@@ -1435,13 +1849,8 @@
 %    Unlike \cs{NewOrdRel}, this command allows to specify
 %    default values for subscript and superscript for the
 %    newly defined command in somewhat more convenient way.
-%
-%    The commands validates option list before proceeding
-%    with new command definition.
 %    \begin{macrocode}
 \DeclareDocumentCommand{\NewOrdRelX}{s O{}}{%
-    % check if options are correct early
-    {\options{/ordrel,#2}}%
     \IfBooleanTF{#1}%
         {\@ordrel@new@label@x{#2}}%
         {\@ordrel@new@nolabel@x{#2}}%
@@ -1456,14 +1865,11 @@
 %        \cs{SetupOrdRel}*\Arg{options}
 %    \end{syntax}
 %
-%    The command first validates the given options, then
-%    modifies the scope-level variable adding (or assigning
+%    The command modifies the scope-level variable adding (or assigning
 %    in case of starred version) the passed options to it.
 %
 %    \begin{macrocode}
 \DeclareDocumentCommand{\SetupOrdRel}{s m}{%
-    % validate options
-    {\options{/ordrel,#2}}%
     \IfBooleanTF{#1}{%
         \def\@ordrel@options@global{%
             \optionsalso{#2,}%
